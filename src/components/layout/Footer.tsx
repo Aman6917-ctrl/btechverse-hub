@@ -1,146 +1,59 @@
-import { BookOpen, Github, Twitter, Linkedin, Mail, Heart, ArrowUpRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowUpRight, Heart } from "lucide-react";
 
-const footerLinks = {
-  resources: [
-    { name: "Study Notes", href: "#" },
-    { name: "Previous Papers", href: "#" },
-    { name: "Presentations", href: "#" },
-    { name: "Interview Prep", href: "#" },
-  ],
-  branches: [
-    { name: "Computer Science", href: "#" },
-    { name: "AI & ML", href: "#" },
-    { name: "Data Science", href: "#" },
-    { name: "Electronics", href: "#" },
-  ],
-  company: [
-    { name: "About Us", href: "#about" },
-    { name: "Contact", href: "#" },
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
-  ],
+const links = {
+  resources: ["Study Notes", "Previous Papers", "Presentations", "Interview Prep"],
+  branches: ["Computer Science", "AI & ML", "Electronics", "Mechanical"],
+  company: ["About", "Contact", "Privacy", "Terms"],
 };
-
-const socialLinks = [
-  { icon: Github, href: "#", label: "GitHub" },
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Mail, href: "#", label: "Email" },
-];
 
 export function Footer() {
   return (
-    <footer className="relative overflow-hidden border-t border-border/50">
-      {/* Background */}
-      <div className="absolute inset-0 bg-card" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/5 rounded-full blur-[100px]" />
-      
-      <div className="container relative py-16 md:py-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
+    <footer className="border-t border-border">
+      <div className="container py-12 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
-          <div className="col-span-2 lg:col-span-2">
-            <a href="#" className="flex items-center gap-3 mb-6 group">
-              <motion.div 
-                whileHover={{ rotate: 5, scale: 1.05 }}
-                className="p-2.5 rounded-xl bg-gradient-primary shadow-lg"
-              >
-                <BookOpen className="h-5 w-5 text-white" />
-              </motion.div>
-              <span className="text-xl font-display font-bold text-foreground">
-                BTech<span className="text-gradient">Verse</span>
+          <div className="col-span-2 md:col-span-1">
+            <a href="#" className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">B</span>
+              </div>
+              <span className="text-lg font-bold">
+                btech<span className="text-primary">verse</span>
               </span>
             </a>
-            <p className="text-muted-foreground text-sm mb-8 max-w-xs leading-relaxed">
-              Your one-stop destination for B.Tech study materials, notes, and
-              exam preparation. Free for every engineering student.
+            <p className="text-sm text-muted-foreground">
+              Free study materials for every engineering student.
             </p>
-            {/* Social Links */}
-            <div className="flex gap-3">
-              {socialLinks.map((social) => (
-                <motion.a
-                  key={social.label}
-                  href={social.href}
-                  aria-label={social.label}
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-3 rounded-xl glass hover:border-primary/30 hover:text-primary transition-all"
-                >
-                  <social.icon className="h-5 w-5" />
-                </motion.a>
-              ))}
+          </div>
+
+          {/* Links */}
+          {Object.entries(links).map(([title, items]) => (
+            <div key={title}>
+              <p className="font-semibold mb-4 capitalize">{title}</p>
+              <ul className="space-y-2">
+                {items.map((item) => (
+                  <li key={item}>
+                    <a 
+                      href="#" 
+                      className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 group"
+                    >
+                      {item}
+                      <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h4 className="font-bold text-foreground mb-5">Resources</h4>
-            <ul className="space-y-3">
-              {footerLinks.resources.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="group flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.name}
-                    <ArrowUpRight className="h-3 w-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Branches */}
-          <div>
-            <h4 className="font-bold text-foreground mb-5">Branches</h4>
-            <ul className="space-y-3">
-              {footerLinks.branches.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="group flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.name}
-                    <ArrowUpRight className="h-3 w-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h4 className="font-bold text-foreground mb-5">Company</h4>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="group flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {link.name}
-                    <ArrowUpRight className="h-3 w-3 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          ))}
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Bottom */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} BTechVerse. All rights reserved.
+            © 2024 BTechVerse. No rights reserved (we're students lol).
           </p>
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
-            Made with 
-            <motion.span
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            >
-              <Heart className="h-4 w-4 text-destructive fill-destructive" />
-            </motion.span>
-            for students
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> and lots of chai
           </p>
         </div>
       </div>
