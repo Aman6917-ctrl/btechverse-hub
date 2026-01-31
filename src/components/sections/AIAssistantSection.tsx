@@ -1,27 +1,28 @@
 import { motion } from "framer-motion";
-import { Send, Bot, User, Sparkles, ArrowRight } from "lucide-react";
+import { Send, Bot, User, Sparkles, ArrowRight, MessageCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 const sampleQuestions = [
-  "Explain binary search",
-  "What's a linked list?",
-  "OSI model layers",
-  "SQL joins types",
+  "Binary search samjhao",
+  "Linked list kya hai?",
+  "OSI model",
+  "SQL joins",
+  "Pointers in C",
 ];
 
 const chatMessages = [
   {
     type: "bot",
-    message: "Hey! 👋 I'm your study buddy. Ask me anything about engineering - I'll explain it like a friend, not a textbook."
+    message: "Yo! 👋 Main hoon tera study buddy. Koi bhi topic bolo — seedha simple language mein samjha dunga. Textbook wali boring language nahi!"
   },
   {
     type: "user", 
-    message: "What's the difference between stack and queue?"
+    message: "Stack aur Queue mein difference?"
   },
   {
     type: "bot",
-    message: "Think of it this way:\n\n**Stack** = Stack of plates 🍽️\nLast plate you put goes out first (LIFO)\n\n**Queue** = Movie ticket line 🎬\nFirst person in line gets ticket first (FIFO)\n\nWant me to show code examples?"
+    message: "Bahut easy hai bhai:\n\n📚 **Stack** = Plates ki stack soch\nJo plate sabse upar hai, woh pehle nikalegi (LIFO)\n\n🎬 **Queue** = Cinema ki line soch\nJo pehle aaya, usko pehle ticket milega (FIFO)\n\nCode example dekhna hai?"
   }
 ];
 
@@ -29,24 +30,24 @@ export function AIAssistantSection() {
   const [question, setQuestion] = useState("");
 
   return (
-    <section id="ai-assistant" className="section-padding relative overflow-hidden">
+    <section id="ai-assistant" className="section-padding relative overflow-hidden bg-muted/30">
       {/* Decorative elements */}
-      <div className="absolute top-20 right-20 w-64 h-64 border border-primary/10 rounded-full" />
-      <div className="absolute bottom-20 left-10 w-40 h-40 border border-accent/10 rounded-full" />
+      <div className="absolute top-10 left-10 text-4xl opacity-20">🤖</div>
+      <div className="absolute bottom-20 right-20 text-3xl opacity-20">💬</div>
       
       <div className="container relative">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left Content */}
           <div>
-            <motion.span
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+            <motion.div
+              initial={{ opacity: 0, rotate: 3 }}
+              whileInView={{ opacity: 1, rotate: 0 }}
               viewport={{ once: true }}
-              className="badge badge-accent mb-6"
+              className="sticker mb-6 inline-block"
             >
               <Sparkles className="h-3 w-3" />
-              AI Powered
-            </motion.span>
+              AI POWERED
+            </motion.div>
 
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -54,9 +55,9 @@ export function AIAssistantSection() {
               viewport={{ once: true }}
               className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
             >
-              Stuck on a concept?
+              Kuch samajh nahi aa raha?
               <br />
-              <span className="text-muted-foreground">Just ask.</span>
+              <span className="underline-sketch">Puch le.</span>
             </motion.h2>
 
             <motion.p
@@ -66,10 +67,11 @@ export function AIAssistantSection() {
               transition={{ delay: 0.1 }}
               className="text-lg text-muted-foreground mb-8 max-w-md"
             >
-              No more googling for hours. Our AI explains complex topics in simple words, 
-              with examples that actually make sense.
+              No more ghanto ka Google search. Yeh AI literally tera dost hai — 
+              explain karega jaise hostel mein friend karta hai. Simple. Quick.
             </motion.p>
 
+            {/* Sample questions as handwritten tags */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -77,11 +79,13 @@ export function AIAssistantSection() {
               transition={{ delay: 0.2 }}
               className="flex flex-wrap gap-2 mb-8"
             >
-              {sampleQuestions.map((q) => (
+              <span className="text-sm text-muted-foreground mr-2">Try:</span>
+              {sampleQuestions.map((q, i) => (
                 <button
                   key={q}
                   onClick={() => setQuestion(q)}
-                  className="px-4 py-2 text-sm bg-muted rounded-full hover:bg-muted/80 transition-colors"
+                  className="px-3 py-1.5 text-sm bg-card border-2 border-border hover:border-foreground transition-colors"
+                  style={{ transform: `rotate(${i % 2 === 0 ? '-1' : '1'}deg)` }}
                 >
                   {q}
                 </button>
@@ -93,39 +97,49 @@ export function AIAssistantSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
+              className="flex flex-wrap gap-4"
             >
-              <Button size="lg" variant="primary">
-                Try AI Buddy
-                <ArrowRight className="h-4 w-4" />
+              <Button 
+                size="lg" 
+                variant="primary"
+                className="shadow-[4px_4px_0_0_hsl(var(--primary)/0.3)]"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Start Chatting
               </Button>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Zap className="h-4 w-4 text-accent" />
+                100K+ doubts solved
+              </div>
             </motion.div>
           </div>
 
-          {/* Right - Chat UI */}
+          {/* Right - Chat UI with handcrafted style */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: 20, rotate: 1 }}
+            whileInView={{ opacity: 1, x: 0, rotate: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg">
+            <div className="border-2 border-foreground bg-card overflow-hidden shadow-[6px_6px_0_0_hsl(var(--foreground))]">
               {/* Chat Header */}
-              <div className="flex items-center gap-3 p-4 border-b border-border">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+              <div className="flex items-center gap-3 p-4 border-b-2 border-foreground bg-primary/5">
+                <div className="w-10 h-10 bg-primary flex items-center justify-center">
                   <Bot className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground">AI Study Buddy</p>
-                  <p className="text-xs text-muted-foreground">Always online • Replies instantly</p>
+                  <p className="font-bold text-foreground">AI Study Buddy</p>
+                  <p className="text-xs text-muted-foreground">24/7 available • Kabhi bore nahi hota</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-xs text-primary font-medium">Active</span>
+                  <span className="text-xs text-primary font-medium">Online</span>
                 </div>
               </div>
 
               {/* Chat Messages */}
-              <div className="p-4 space-y-4 min-h-[300px] bg-muted/30">
+              <div className="p-4 space-y-4 min-h-[320px] bg-muted/20">
                 {chatMessages.map((msg, index) => (
                   <motion.div
                     key={index}
@@ -136,42 +150,71 @@ export function AIAssistantSection() {
                     className={`flex gap-3 ${msg.type === 'user' ? 'justify-end' : ''}`}
                   >
                     {msg.type === 'bot' && (
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
                         <Bot className="h-4 w-4 text-primary" />
                       </div>
                     )}
-                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
-                      msg.type === 'user' 
-                        ? 'bg-foreground text-background rounded-br-md' 
-                        : 'bg-background border border-border rounded-bl-md'
-                    }`}>
+                    <div 
+                      className={`max-w-[85%] p-3 text-sm ${
+                        msg.type === 'user' 
+                          ? 'bg-foreground text-background' 
+                          : 'bg-card border-2 border-border'
+                      }`}
+                      style={{ transform: `rotate(${msg.type === 'user' ? '0.5' : '-0.3'}deg)` }}
+                    >
                       <p className="whitespace-pre-line">{msg.message}</p>
                     </div>
                     {msg.type === 'user' && (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-muted flex items-center justify-center flex-shrink-0 border border-border">
                         <User className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
                   </motion.div>
                 ))}
+                
+                {/* Typing indicator */}
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="px-4 py-3 bg-card border-2 border-border">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Chat Input */}
-              <div className="p-4 border-t border-border">
+              <div className="p-4 border-t-2 border-foreground bg-card">
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Ask anything..."
-                    className="flex-1 px-4 py-3 rounded-full bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Kuch bhi puch lo..."
+                    className="flex-1 px-4 py-3 bg-muted text-sm border-2 border-border focus:outline-none focus:border-foreground transition-colors"
                   />
-                  <button className="p-3 rounded-full bg-foreground text-background hover:opacity-90 transition-opacity">
+                  <button className="p-3 bg-foreground text-background hover:opacity-90 transition-opacity">
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             </div>
+            
+            {/* Handwritten note */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+              className="text-sm text-muted-foreground mt-4 italic text-center"
+              style={{ fontFamily: 'Georgia, serif' }}
+            >
+              ^ Real conversation. Aise hi samjhata hai! ✨
+            </motion.p>
           </motion.div>
         </div>
       </div>
