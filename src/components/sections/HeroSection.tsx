@@ -282,13 +282,13 @@ export function HeroSection() {
             Get guidance from top mentors working in leading companies
           </p>
           <div className="relative overflow-hidden">
-            <div className="flex gap-14 items-center marquee">
+            <div className="flex gap-16 items-center marquee">
               {[...companyLogos, ...companyLogos].map((company, i) => (
-                <div key={i} className="flex-shrink-0 h-8 flex items-center justify-center">
+                <div key={i} className="flex-shrink-0 h-7 w-24 flex items-center justify-center">
                   <img 
                     src={company.logo} 
                     alt={company.name}
-                    className="h-8 w-auto object-contain"
+                    className="max-h-7 max-w-24 w-auto h-auto object-contain"
                   />
                 </div>
               ))}
