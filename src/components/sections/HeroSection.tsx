@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, Star, Zap, Coffee, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const trustedBy = [
-  "IIT Delhi", "NIT Trichy", "VIT", "BITS Pilani", "DTU", "NSUT", "IIIT Hyderabad"
+const placedAt = [
+  "Oracle", "Adobe", "Zoomcar", "Fampay", "Juspay", "Fivetran", "Innovapptive", "Bhanzu", "Pharmeasy", "Porter", "Kickdrum", "Amadeus Labs", "Indiamart", "TCS", "Infosys", "Elitmus", "HCL Tech"
 ];
 
 export function HeroSection() {
@@ -249,14 +249,14 @@ export function HeroSection() {
           className="mt-20 -mx-6 md:mx-0"
         >
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 flex items-center gap-2">
-            <Heart className="h-3 w-3 text-destructive fill-destructive" />
-            Used by students from these colleges
+            <Sparkles className="h-3 w-3 text-accent" />
+            Hamare students ab in companies mein hai
           </p>
           <div className="relative overflow-hidden">
             <div className="flex gap-12 marquee">
-              {[...trustedBy, ...trustedBy].map((college, i) => (
+              {[...placedAt, ...placedAt].map((company, i) => (
                 <span key={i} className="text-lg font-semibold text-muted-foreground/60 whitespace-nowrap">
-                  {college}
+                  {company}
                 </span>
               ))}
             </div>
