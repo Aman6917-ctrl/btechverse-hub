@@ -12,8 +12,8 @@ export function HeroSection() {
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-dots opacity-30" />
       
-      {/* 100% FREE sticker - top right */}
-      <div className="absolute top-28 right-[8%] hidden lg:block z-10">
+      {/* Hand-drawn style decorative elements */}
+      <div className="absolute top-28 right-[8%] hidden lg:block">
         <motion.div
           initial={{ opacity: 0, rotate: -10 }}
           animate={{ opacity: 1, rotate: 0 }}
@@ -24,6 +24,45 @@ export function HeroSection() {
           100% FREE
         </motion.div>
       </div>
+      
+      <div className="absolute top-1/3 right-[12%] hidden lg:block">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1 }}
+          className="w-16 h-16 border-2 border-dashed border-primary/40 rounded-full flex items-center justify-center"
+        >
+          <span className="text-2xl">📚</span>
+        </motion.div>
+      </div>
+
+      <div className="absolute bottom-1/3 left-[5%] hidden lg:block">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className="sticker-outline text-[10px]"
+          style={{ transform: 'rotate(3deg)' }}
+        >
+          <Coffee className="h-3 w-3" />
+          MADE AT 3AM
+        </motion.div>
+      </div>
+
+      {/* Squiggly arrow pointing to CTA - hand drawn feel */}
+      <svg className="absolute bottom-[30%] right-[25%] w-24 h-24 text-accent hidden xl:block" viewBox="0 0 100 100" fill="none">
+        <motion.path
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 1.5, duration: 1 }}
+          d="M10 80 Q 30 20, 50 50 T 90 20"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray="5 5"
+        />
+      </svg>
       
       <div className="container relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -111,87 +150,65 @@ export function HeroSection() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="hidden lg:flex relative items-center justify-center min-h-[450px]"
+            className="hidden lg:block relative"
           >
             {/* Main stacked cards visual */}
-            <div className="relative w-full max-w-sm">
-              {/* Scattered decorative elements */}
+            <div className="relative w-full max-w-md mx-auto">
+              {/* Background card 3 */}
               <motion.div
-                animate={{ rotate: [0, 10, 0] }}
-                transition={{ repeat: Infinity, duration: 5 }}
-                className="absolute -top-8 left-0 text-5xl"
-              >
-                📖
-              </motion.div>
-              
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-                className="absolute -top-4 right-8 text-4xl"
-              >
-                ✏️
-              </motion.div>
-
-              {/* Background card 3 - yellow */}
-              <div 
-                className="absolute inset-0 bg-yellow-100 border-2 border-yellow-300 rounded-xl"
-                style={{ transform: 'rotate(8deg) translateX(20px) translateY(20px)' }}
+                initial={{ rotate: 8 }}
+                animate={{ rotate: 6 }}
+                transition={{ repeat: Infinity, repeatType: "reverse", duration: 3 }}
+                className="absolute inset-0 bg-accent/10 border-2 border-accent/30 rounded-lg transform translate-x-6 translate-y-6"
               />
               
-              {/* Background card 2 - green */}
-              <div 
-                className="absolute inset-0 bg-primary/10 border-2 border-primary/30 rounded-xl"
-                style={{ transform: 'rotate(-4deg) translateX(10px) translateY(10px)' }}
+              {/* Background card 2 */}
+              <motion.div
+                initial={{ rotate: -4 }}
+                animate={{ rotate: -2 }}
+                transition={{ repeat: Infinity, repeatType: "reverse", duration: 2.5, delay: 0.5 }}
+                className="absolute inset-0 bg-primary/10 border-2 border-primary/30 rounded-lg transform translate-x-3 translate-y-3"
               />
               
               {/* Main card */}
-              <div className="relative bg-card border-2 border-foreground rounded-xl p-5 shadow-[8px_8px_0_0_hsl(var(--foreground))]">
-                {/* Notebook style lines */}
-                <div className="absolute left-8 top-0 bottom-0 w-px bg-red-300/50" />
-                
+              <div className="relative bg-card border-2 border-foreground rounded-lg p-6 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
                 {/* Header */}
-                <div className="flex items-start gap-3 mb-5 pb-4 border-b-2 border-dashed border-border pl-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border-2 border-primary/20">
-                    <span className="text-2xl">📝</span>
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b-2 border-dashed border-border">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+                    <span className="text-xl">📝</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-bold">Data Structures Notes</p>
+                  <div>
+                    <p className="font-bold text-sm">Data Structures Notes</p>
                     <p className="text-xs text-muted-foreground">Computer Science • Sem 3</p>
-                    <div className="flex gap-1 mt-1">
-                      {[1,2,3,4,5].map(i => (
-                        <Star key={i} className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                      ))}
-                    </div>
                   </div>
+                  <span className="ml-auto sticker text-[9px]">
+                    <Star className="h-2.5 w-2.5 fill-current" /> TOP RATED
+                  </span>
                 </div>
                 
-                {/* Preview content */}
-                <div className="space-y-3 mb-5 pl-4">
+                {/* Preview lines */}
+                <div className="space-y-3 mb-6">
                   <div className="flex gap-2 items-center">
-                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">Arrays & Linked Lists</p>
+                    <div className="w-2 h-2 bg-primary rounded-full" />
+                    <div className="h-2.5 bg-muted rounded flex-1" />
                   </div>
                   <div className="flex gap-2 items-center">
-                    <div className="w-2 h-2 bg-accent rounded-full flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">Stacks & Queues</p>
+                    <div className="w-2 h-2 bg-accent rounded-full" />
+                    <div className="h-2.5 bg-muted rounded w-4/5" />
                   </div>
                   <div className="flex gap-2 items-center">
-                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">Trees & Graphs</p>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <div className="w-2 h-2 bg-accent rounded-full flex-shrink-0" />
-                    <p className="text-sm text-muted-foreground">Sorting Algorithms</p>
+                    <div className="w-2 h-2 bg-primary rounded-full" />
+                    <div className="h-2.5 bg-muted rounded w-3/5" />
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center justify-between text-xs pl-4 pt-3 border-t border-dashed border-border">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Heart className="h-3 w-3 text-destructive fill-destructive" /> 2.4k
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Heart className="h-3 w-3 text-destructive fill-destructive" /> 2.4k saves
                   </span>
-                  <span className="text-muted-foreground">45 pages</span>
-                  <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-[10px] font-bold">FREE</span>
+                  <span>45 pages</span>
+                  <span className="text-primary font-medium">Free ↓</span>
                 </div>
               </div>
 
@@ -199,38 +216,26 @@ export function HeroSection() {
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ repeat: Infinity, duration: 2.5 }}
-                className="absolute -top-6 -right-6 bg-accent text-accent-foreground px-3 py-2 rounded-lg shadow-[4px_4px_0_0_hsl(var(--foreground))] border-2 border-foreground font-bold text-sm"
-                style={{ transform: 'rotate(5deg)' }}
+                className="absolute -top-4 -right-4 bg-card border-2 border-foreground p-3 rounded-lg shadow-[3px_3px_0_0_hsl(var(--foreground))]"
               >
-                🎯 Top Pick!
+                <span className="text-2xl">🎯</span>
               </motion.div>
 
               <motion.div
                 animate={{ y: [0, 6, 0] }}
                 transition={{ repeat: Infinity, duration: 3, delay: 0.5 }}
-                className="absolute -bottom-4 -left-4 bg-card border-2 border-foreground px-3 py-2 rounded-lg shadow-[3px_3px_0_0_hsl(var(--foreground))]"
+                className="absolute -bottom-6 -left-6 bg-accent text-accent-foreground px-4 py-2 rounded-lg shadow-[3px_3px_0_0_hsl(var(--foreground))] font-bold text-sm"
                 style={{ transform: 'rotate(-3deg)' }}
               >
-                <span className="text-sm font-bold flex items-center gap-1">
-                  <Coffee className="h-3 w-3" /> Made at 3AM
-                </span>
+                ✨ PDF Ready
               </motion.div>
 
-              {/* More floating decorations */}
               <motion.div
                 animate={{ rotate: [0, 5, 0, -5, 0] }}
                 transition={{ repeat: Infinity, duration: 4 }}
-                className="absolute bottom-1/4 -right-16 text-4xl"
+                className="absolute top-1/2 -right-12 text-4xl"
               >
                 📚
-              </motion.div>
-              
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute top-1/3 -left-14 text-3xl"
-              >
-                💡
               </motion.div>
             </div>
           </motion.div>
