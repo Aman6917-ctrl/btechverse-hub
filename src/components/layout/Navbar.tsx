@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoImage from "@/assets/logo.png";
 
 const navLinks = [
   { name: "Resources", href: "#resources" },
@@ -38,9 +39,7 @@ export function Navbar() {
       >
         {/* Logo - Left */}
         <a href="#" className="flex items-center gap-2 pl-2 flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">B</span>
-          </div>
+          <img src={logoImage} alt="BTechVerse" className="h-8 w-auto" />
           <span className="text-base font-bold hidden sm:inline">
             btech<span className="text-primary">verse</span>
           </span>
