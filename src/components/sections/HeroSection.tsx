@@ -2,8 +2,29 @@ import { motion } from "framer-motion";
 import { ArrowRight, Star, Zap, Coffee, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const placedAt = [
-  "Oracle", "Adobe", "Zoomcar", "Fampay", "Juspay", "Fivetran", "Innovapptive", "Bhanzu", "Pharmeasy", "Porter", "Kickdrum", "Amadeus Labs", "Indiamart", "TCS", "Infosys", "Elitmus", "HCL Tech"
+// Company logos
+import oracleLogo from "@/assets/logos/oracle.png";
+import zoomcarLogo from "@/assets/logos/zoomcar.png";
+import fampayLogo from "@/assets/logos/fampay.png";
+import juspayLogo from "@/assets/logos/juspay.png";
+import fivetranLogo from "@/assets/logos/fivetran.png";
+import innovapptiveLogo from "@/assets/logos/innovapptive.png";
+import pharmeasyLogo from "@/assets/logos/pharmeasy.png";
+import kickdrumLogo from "@/assets/logos/kickdrum.png";
+import indiamartLogo from "@/assets/logos/indiamart.png";
+import infosysLogo from "@/assets/logos/infosys.png";
+
+const companyLogos = [
+  { name: "Oracle", logo: oracleLogo },
+  { name: "Zoomcar", logo: zoomcarLogo },
+  { name: "Fampay", logo: fampayLogo },
+  { name: "Juspay", logo: juspayLogo },
+  { name: "Fivetran", logo: fivetranLogo },
+  { name: "Innovapptive", logo: innovapptiveLogo },
+  { name: "Pharmeasy", logo: pharmeasyLogo },
+  { name: "Kickdrum", logo: kickdrumLogo },
+  { name: "Indiamart", logo: indiamartLogo },
+  { name: "Infosys", logo: infosysLogo },
 ];
 
 export function HeroSection() {
@@ -253,11 +274,14 @@ export function HeroSection() {
             Get guidance from top mentors working in leading companies
           </p>
           <div className="relative overflow-hidden">
-            <div className="flex gap-12 marquee">
-              {[...placedAt, ...placedAt].map((company, i) => (
-                <span key={i} className="text-lg font-semibold text-muted-foreground/60 whitespace-nowrap">
-                  {company}
-                </span>
+            <div className="flex gap-12 items-center marquee">
+              {[...companyLogos, ...companyLogos].map((company, i) => (
+                <img 
+                  key={i} 
+                  src={company.logo} 
+                  alt={company.name}
+                  className="h-8 md:h-10 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
+                />
               ))}
             </div>
           </div>
