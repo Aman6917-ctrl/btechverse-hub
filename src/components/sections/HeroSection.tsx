@@ -250,7 +250,7 @@ export function HeroSection() {
         >
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 flex items-center gap-2">
             <Sparkles className="h-3 w-3 text-accent" />
-            Our mentors work at
+            Get guidance from top mentors working in leading companies
           </p>
           <div className="relative overflow-hidden">
             <div className="flex gap-12 marquee">
