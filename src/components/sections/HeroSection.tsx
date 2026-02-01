@@ -17,6 +17,7 @@ import amadeusLogo from "@/assets/logos/amadeus.png";
 import elitmusLogo from "@/assets/logos/elitmus.png";
 import tcsLogo from "@/assets/logos/tcs.png";
 import hcltechLogo from "@/assets/logos/hcltech.png";
+import adobeLogo from "@/assets/logos/adobe.png";
 
 const companyLogos = [
   { name: "Oracle", logo: oracleLogo },
@@ -33,6 +34,7 @@ const companyLogos = [
   { name: "eLitmus", logo: elitmusLogo },
   { name: "TCS", logo: tcsLogo },
   { name: "HCLTech", logo: hcltechLogo },
+  { name: "Adobe", logo: adobeLogo },
 ];
 
 export function HeroSection() {
