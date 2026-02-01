@@ -15,6 +15,8 @@ import indiamartLogo from "@/assets/logos/indiamart.png";
 import infosysLogo from "@/assets/logos/infosys.png";
 import amadeusLogo from "@/assets/logos/amadeus.png";
 import elitmusLogo from "@/assets/logos/elitmus.png";
+import tcsLogo from "@/assets/logos/tcs.png";
+import hcltechLogo from "@/assets/logos/hcltech.png";
 
 const companyLogos = [
   { name: "Oracle", logo: oracleLogo },
@@ -29,6 +31,8 @@ const companyLogos = [
   { name: "Infosys", logo: infosysLogo },
   { name: "Amadeus", logo: amadeusLogo },
   { name: "eLitmus", logo: elitmusLogo },
+  { name: "TCS", logo: tcsLogo },
+  { name: "HCLTech", logo: hcltechLogo },
 ];
 
 export function HeroSection() {
