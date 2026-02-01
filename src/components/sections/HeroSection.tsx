@@ -248,7 +248,7 @@ export function HeroSection() {
           transition={{ delay: 0.5 }}
           className="mt-20 -mx-6 md:mx-0"
         >
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 flex items-center gap-2">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 flex items-center justify-center gap-2 text-center">
             <Sparkles className="h-3 w-3 text-accent" />
             Get guidance from top mentors working in leading companies
           </p>
