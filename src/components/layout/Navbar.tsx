@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import logoImage from "@/assets/logo.png";
 
 const navLinks = [
@@ -15,12 +17,23 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleAuthClick = () => {
+    navigate("/auth");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsOpen(false);
+  };
 
   return (
     <motion.header
@@ -38,7 +51,7 @@ export function Navbar() {
         } border border-border/50 max-w-4xl w-full`}
       >
         {/* Logo - Left */}
-        <a href="#" className="flex items-center gap-2 pl-2 flex-shrink-0">
+        <a href="/" className="flex items-center gap-2 pl-2 flex-shrink-0">
           <img src={logoImage} alt="BTechVerse" className="h-8 w-auto" />
           <span className="text-base font-bold hidden sm:inline text-primary">
             btechverse
@@ -59,14 +72,33 @@ export function Navbar() {
         </div>
 
         {/* Desktop CTA - Right */}
-        <div className="hidden md:flex items-center">
-          <Button 
-            size="sm" 
-            className="rounded-full px-5 h-9 bg-foreground text-background hover:bg-foreground/90"
-          >
-            Get Started
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+        <div className="hidden md:flex items-center gap-2">
+          {!loading && user ? (
+            <>
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <User className="h-4 w-4" />
+                {user.email?.split("@")[0]}
+              </span>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="rounded-full px-4 h-9"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <Button 
+              size="sm" 
+              className="rounded-full px-5 h-9 bg-foreground text-background hover:bg-foreground/90"
+              onClick={handleAuthClick}
+            >
+              Get Started
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -103,10 +135,33 @@ export function Navbar() {
                 ))}
               </div>
               <div className="mt-4 pt-4 border-t border-border/50">
-                <Button className="w-full rounded-full">
-                  Get Started
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                {!loading && user ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground flex items-center gap-2 px-4">
+                      <User className="h-4 w-4" />
+                      {user.email}
+                    </p>
+                    <Button 
+                      className="w-full rounded-full" 
+                      variant="outline"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    className="w-full rounded-full"
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleAuthClick();
+                    }}
+                  >
+                    Get Started
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </motion.div>
