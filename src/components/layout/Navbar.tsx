@@ -40,8 +40,8 @@ export function Navbar() {
         {/* Logo - Left */}
         <a href="#" className="flex items-center gap-2 pl-2 flex-shrink-0">
           <img src={logoImage} alt="BTechVerse" className="h-8 w-auto" />
-          <span className="text-base font-bold hidden sm:inline">
-            btech<span className="text-primary">verse</span>
+          <span className="text-base font-bold hidden sm:inline text-primary">
+            btechverse
           </span>
         </a>
 
