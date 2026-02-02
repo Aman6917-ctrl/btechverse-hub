@@ -12,11 +12,8 @@ import innovapptiveLogo from "@/assets/logos/innovapptive.png";
 import pharmeasyLogo from "@/assets/logos/pharmeasy.png";
 import kickdrumLogo from "@/assets/logos/kickdrum.png";
 import indiamartLogo from "@/assets/logos/indiamart.png";
-import infosysLogo from "@/assets/logos/infosys.png";
 import amadeusLogo from "@/assets/logos/amadeus.png";
 import elitmusLogo from "@/assets/logos/elitmus.png";
-import tcsLogo from "@/assets/logos/tcs.png";
-import hcltechLogo from "@/assets/logos/hcltech.png";
 import adobeLogo from "@/assets/logos/adobe.png";
 
 const companyLogos = [
@@ -29,11 +26,8 @@ const companyLogos = [
   { name: "Pharmeasy", logo: pharmeasyLogo },
   { name: "Kickdrum", logo: kickdrumLogo },
   { name: "Indiamart", logo: indiamartLogo },
-  { name: "Infosys", logo: infosysLogo },
   { name: "Amadeus", logo: amadeusLogo },
   { name: "eLitmus", logo: elitmusLogo },
-  { name: "TCS", logo: tcsLogo },
-  { name: "HCLTech", logo: hcltechLogo },
   { name: "Adobe", logo: adobeLogo },
 ];
 
