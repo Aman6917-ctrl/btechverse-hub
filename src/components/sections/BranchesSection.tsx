@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 const branches = [
@@ -44,26 +45,29 @@ export function BranchesSection() {
         {/* Branch Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {branches.map((branch, index) => (
-            <motion.a
+            <Link
               key={branch.code}
-              href="#"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.05 }}
-              className="group flex items-center gap-4 p-4 rounded-xl bg-background border border-border hover:border-foreground/20 transition-all card-hover"
+              to={`/branch/${encodeURIComponent(branch.code)}`}
             >
-              <div className={`w-3 h-3 rounded-full ${branch.color}`} />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                  {branch.name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {branch.materials} materials
-                </p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-            </motion.a>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+                className="group flex items-center gap-4 p-4 rounded-xl bg-background border border-border hover:border-foreground/20 transition-all card-hover"
+              >
+                <div className={`w-3 h-3 rounded-full ${branch.color}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                    {branch.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {branch.materials} materials
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+              </motion.div>
+            </Link>
           ))}
         </div>
       </div>
