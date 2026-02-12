@@ -1,9 +1,9 @@
 import { useState, useLayoutEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Briefcase, MessageCircle, Code, Database, ArrowRight, ChevronDown } from "lucide-react";
+import { Briefcase, MessageCircle, Code, Database, ArrowRight, ArrowLeft, ChevronDown } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -54,6 +54,7 @@ function scrollToTop() {
 const VALID_IDS = new Set(INTERVIEW_COMPANIES.map((c) => c.id));
 
 export default function InterviewPrep() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const companyFromUrl = searchParams.get("company") || "";
   const [company, setCompany] = useState<CompanyId | "">(
@@ -78,6 +79,15 @@ export default function InterviewPrep() {
       <main className="pt-20 pb-16 md:pt-24 md:pb-20 bg-secondary/30 relative overflow-hidden">
         <div className="absolute inset-0 bg-dots opacity-40" />
         <div className="container relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
           <motion.div
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
