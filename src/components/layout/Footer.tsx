@@ -30,7 +30,7 @@ export function Footer() {
   return (
     <footer id="footer" className="border-t border-border relative w-full overflow-x-hidden bg-background">
       {/* Upper area – text only, no grid (Fivetran-style) */}
-      <div className="w-full bg-background flex flex-col items-center justify-center gap-6 px-4 pt-5 pb-0 md:pt-6 md:pb-0">
+      <div className="relative z-10 w-full bg-background flex flex-col items-center justify-center gap-6 px-4 pt-5 pb-0 md:pt-6 md:pb-0">
         <motion.h2
           className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground text-center max-w-2xl"
           initial={{ opacity: 0, y: 12 }}
@@ -48,11 +48,11 @@ export function Footer() {
           transition={{ duration: 0.4, delay: 0.1 }}
         >
           <Button size="lg" variant="default" className="rounded-full btn-punch hover:scale-[1.02] active:scale-[0.98]" asChild>
-            <Link to="/#resources">Explore resources</Link>
+            <Link to="/#resources" className="cursor-pointer">Explore resources</Link>
           </Button>
           <Link
             to="/mentors"
-            className="text-sm font-semibold text-foreground hover:text-primary inline-flex items-center gap-1.5 transition-colors"
+            className="text-sm font-semibold text-foreground hover:text-primary inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             Find a mentor
             <ArrowRight className="h-4 w-4" />
@@ -165,7 +165,7 @@ export function Footer() {
           transition={{ duration: 0.35, delay: 0.15, ease: "easeOut" }}
         >
           <p className="text-sm text-muted-foreground text-center md:text-left">
-            © 2025 Btechverse. Built so you study smarter—no runaround.
+            © 2026 Btechverse. Built so you study smarter—no runaround.
           </p>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap justify-center md:justify-end">
             <span className="inline-flex items-center gap-1">
