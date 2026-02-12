@@ -1,16 +1,20 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, FileClock, Presentation, Briefcase, ArrowRight, ArrowUpRight, Sparkles, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 
 const resources = [
   {
-    icon: FileText,
-    title: "Study Notes",
-    description: "Handwritten + typed notes. Toppers ke notes bhi hain 👀",
-    count: "2,500+",
-    tag: "🔥 Most Popular",
-    emoji: "📝",
+    icon: Briefcase,
+    title: "Interview Prep",
+    description: "Company-wise HR, DSA & SQL questions. Placement ready.",
+    count: "50+",
+    tag: "💼 Companies",
+    emoji: "💼",
     available: true,
+    link: "/interview-prep",
   },
   {
     icon: FileClock,
@@ -20,6 +24,7 @@ const resources = [
     tag: "📚 Exam Ready",
     emoji: "📄",
     available: true,
+    link: "/#branches",
   },
   {
     icon: Presentation,
@@ -29,25 +34,26 @@ const resources = [
     tag: "⚡ Quick Submit",
     emoji: "🎤",
     available: true,
+    link: "/#branches",
   },
   {
-    icon: Briefcase,
-    title: "Interview Prep",
-    description: "Technical + HR questions. Placement season ready.",
-    count: "Soon™",
-    tag: "🚧 Coming Soon",
-    emoji: "💼",
-    available: false,
+    icon: FileText,
+    title: "Study Notes",
+    description: "Handwritten + typed notes. Toppers ke notes bhi hain 👀",
+    count: "2,500+",
+    tag: "🔥 Most Popular",
+    emoji: "📝",
+    available: true,
+    link: "/#branches",
   },
 ];
 
 export function ResourcesSection() {
+  const { user } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   return (
-    <section id="resources" className="section-padding relative overflow-hidden">
-      {/* Background doodles */}
-      <div className="absolute top-10 right-20 text-4xl opacity-20 rotate-12">📚</div>
-      <div className="absolute bottom-20 left-10 text-3xl opacity-20 -rotate-12">✏️</div>
-      
+    <section id="resources" className="section-padding pb-12 md:pb-16 lg:pb-20 relative overflow-hidden">
       <div className="container relative">
         {/* Header with sticker */}
         <div className="max-w-2xl mb-16">
@@ -55,7 +61,7 @@ export function ResourcesSection() {
             initial={{ opacity: 0, rotate: -3 }}
             whileInView={{ opacity: 1, rotate: 0 }}
             viewport={{ once: true }}
-            className="sticker-green mb-6 inline-block"
+            className="sticker-green-soft mb-6 inline-block"
           >
             <Download className="h-3 w-3" />
             FREE DOWNLOADS
@@ -69,7 +75,7 @@ export function ResourcesSection() {
           >
             Jo chahiye, <span className="underline-sketch">mil jayega.</span>
             <br />
-            <span className="text-muted-foreground text-2xl md:text-3xl lg:text-4xl">No signup. No waiting. No bakwaas.</span>
+            <span className="text-muted-foreground text-2xl md:text-3xl lg:text-4xl">One login. Notes, PYQs, sab yahin. Seedha padhai.</span>
           </motion.h2>
         </div>
 
@@ -78,14 +84,20 @@ export function ResourcesSection() {
           {resources.map((resource, index) => (
             <motion.a
               key={resource.title}
-              href="#"
+              href={resource.available ? resource.link ?? "/#branches" : "#"}
+              onClick={(e) => {
+                if (resource.available && !user) {
+                  e.preventDefault();
+                  setShowLoginModal(true);
+                }
+              }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className={`group relative p-6 md:p-8 border-2 border-border bg-card transition-all ${
+              className={`group relative p-6 md:p-8 border-2 border-border bg-card transition-all duration-300 ${
                 resource.available 
-                  ? "hover:border-foreground cursor-pointer" 
+                  ? "hover:border-foreground hover:shadow-lg hover:shadow-foreground/10 hover:scale-[1.02] cursor-pointer" 
                   : "opacity-60 cursor-not-allowed"
               }`}
               style={{ transform: `rotate(${index % 2 === 0 ? '-0.3' : '0.3'}deg)` }}
@@ -141,20 +153,37 @@ export function ResourcesSection() {
           viewport={{ once: true }}
           className="mt-12 text-center"
         >
-          <Button 
-            size="lg" 
-            variant="default"
-            className="shadow-[4px_4px_0_0_hsl(var(--foreground))] hover:shadow-[2px_2px_0_0_hsl(var(--foreground))] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-          >
-            <Sparkles className="h-4 w-4" />
-            Explore All Resources
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          {user ? (
+            <Button size="lg" variant="default" className="btn-punch hover:scale-[1.02] active:scale-[0.98]" asChild>
+              <a href="/#branches">
+                <Sparkles className="h-4 w-4" />
+                Explore All Resources
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              variant="default"
+              className="btn-punch hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => setShowLoginModal(true)}
+            >
+              <Sparkles className="h-4 w-4" />
+              Explore All Resources
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
           <p className="text-sm text-muted-foreground mt-4">
-            No login required. Seriously. Just click and download.
+            Login to browse and download.
           </p>
         </motion.div>
       </div>
+
+      <LoginRequiredModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        redirect="/#resources"
+      />
     </section>
   );
 }

@@ -1,53 +1,22 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Linkedin, Star, Clock, Users, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Calendar, Briefcase, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookSessionModal } from "@/components/BookSessionModal";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { mentors as allMentors } from "@/data/mentors";
 
-const mentors = [
-  {
-    name: "Rahul Sharma",
-    role: "SDE-3 @ Google",
-    expertise: ["DSA", "System Design", "Interview Prep"],
-    rating: 4.9,
-    sessions: 120,
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
-    available: true,
-    price: "Free",
-  },
-  {
-    name: "Priya Patel",
-    role: "ML Engineer @ Microsoft",
-    expertise: ["Machine Learning", "Python", "AI/ML Roadmap"],
-    rating: 4.8,
-    sessions: 85,
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face",
-    available: true,
-    price: "₹99",
-  },
-  {
-    name: "Amit Kumar",
-    role: "Founding Engineer @ Startup",
-    expertise: ["Full Stack", "React", "Startup Tips"],
-    rating: 5.0,
-    sessions: 200,
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
-    available: false,
-    price: "₹149",
-  },
-  {
-    name: "Sneha Reddy",
-    role: "Product Manager @ Amazon",
-    expertise: ["Product Sense", "Case Studies", "Resume Review"],
-    rating: 4.9,
-    sessions: 150,
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
-    available: true,
-    price: "₹199",
-  },
-];
+const mentors = allMentors.slice(0, 4);
 
 export function MentorsSection() {
+  const { user } = useAuth();
+  const [bookModalMentor, setBookModalMentor] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   return (
-    <section id="mentors" className="section-padding bg-secondary/30 relative overflow-hidden">
+    <section id="mentors" className="section-padding pt-12 md:pt-16 lg:pt-20 pb-12 md:pb-16 lg:pb-20 bg-secondary/30 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-dots opacity-40" />
       
@@ -59,13 +28,13 @@ export function MentorsSection() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="sticker-green mb-4 inline-block">🎯 Real Guidance</span>
+          <span className="sticker-green-soft mb-4 inline-block">Mentors from Top Product Companies</span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl mb-4">
-            Industry Experts Se <span className="underline-sketch">Seedha Baat</span>
+            Expert mentors from leading <span className="underline-sketch">product companies.</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-            Google, Microsoft, Amazon ke engineers se 1:1 session book karo. 
-            Career guidance, interview prep, ya sirf thoda motivation — sab milega!
+            Book 1:1 sessions with engineers from Google, Microsoft, Amazon and more.
+            Career guidance, interview prep, and placement advice—direct and actionable.
           </p>
         </motion.div>
 
@@ -81,7 +50,7 @@ export function MentorsSection() {
               className="group"
             >
               <div 
-                className="paper-card h-full flex flex-col transition-all duration-300"
+                className={`paper-card h-full flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-foreground/10 hover:scale-[1.02] ${index === 0 ? 'tape' : ''}`}
                 style={{ transform: `rotate(${index % 2 === 0 ? -0.5 : 0.5}deg)` }}
               >
                 {/* Availability Badge */}
@@ -102,40 +71,31 @@ export function MentorsSection() {
 
                 {/* Profile */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="relative">
-                    <img
-                      src={mentor.image}
-                      alt={mentor.name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-foreground"
-                    />
-                    <div className="absolute -bottom-1 -right-1 bg-background border-2 border-foreground rounded-full p-0.5">
-                      <Linkedin className="w-3 h-3 text-[#0077B5]" />
-                    </div>
-                  </div>
+                  <img
+                    src={mentor.image}
+                    alt={mentor.name}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
+                  />
                   <div>
                     <h3 className="font-bold text-base leading-tight">{mentor.name}</h3>
                     <p className="text-xs text-muted-foreground">{mentor.role}</p>
                   </div>
                 </div>
 
-                {/* Stats */}
+                {/* Experience */}
                 <div className="flex items-center gap-4 mb-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-accent fill-accent" />
-                    <span className="font-semibold">{mentor.rating}</span>
-                  </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span>{mentor.sessions} sessions</span>
+                    <Briefcase className="w-4 h-4" />
+                    <span className="font-medium">{mentor.experience} exp.</span>
                   </div>
                 </div>
 
-                {/* Expertise Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-4 flex-grow">
+                {/* Expertise Tags - min-height so all cards align */}
+                <div className="flex flex-wrap gap-1.5 mb-4 flex-grow min-h-[4.25rem]">
                   {mentor.expertise.map((skill) => (
                     <span
                       key={skill}
-                      className="px-2 py-0.5 bg-muted text-xs font-medium rounded-full"
+                      className="inline-flex items-center justify-center px-2 py-0.5 bg-muted text-xs font-medium rounded-full whitespace-nowrap"
                     >
                       {skill}
                     </span>
@@ -147,6 +107,14 @@ export function MentorsSection() {
                   variant={mentor.available ? "default" : "outline"}
                   className="w-full mt-auto"
                   disabled={!mentor.available}
+                  onClick={() => {
+                  if (!mentor.available) return;
+                  if (!user) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  setBookModalMentor(mentor.name);
+                }}
                 >
                   {mentor.available ? (
                     <>
@@ -162,27 +130,33 @@ export function MentorsSection() {
           ))}
         </div>
 
-        {/* Bottom CTA */}
+        <BookSessionModal
+          open={!!bookModalMentor}
+          onOpenChange={(open) => !open && setBookModalMentor(null)}
+          mentorName={bookModalMentor ?? ""}
+          mentorEmail={allMentors.find((m) => m.name === bookModalMentor)?.email}
+          mentorWhatsapp={allMentors.find((m) => m.name === bookModalMentor)?.whatsapp}
+        />
+
+        <LoginRequiredModal
+          open={showLoginModal}
+          onOpenChange={setShowLoginModal}
+          redirect="/mentors"
+        />
+
+        {/* View all + Apply CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-12 text-center"
+          className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <div className="paper-card inline-block" style={{ transform: "rotate(-1deg)" }}>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="text-left">
-                <p className="font-bold text-lg">Khud mentor banna chahte ho? 🚀</p>
-                <p className="text-sm text-muted-foreground">
-                  Share your experience, help juniors, earn while you learn!
-                </p>
-              </div>
-              <Button variant="accent" className="shrink-0">
-                Apply as Mentor
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          <Button variant="outline" className="rounded-full" asChild>
+            <Link to="/mentors">
+              View all {allMentors.length} mentors
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </Button>
         </motion.div>
       </div>
     </section>

@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Send, Bot, User, Sparkles, MessageCircle, Zap, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 
-const sampleQuestions = [
+const QUICK_QUESTIONS = [
   "Binary search samjhao",
   "Linked list kya hai?",
   "OSI model",
@@ -11,106 +12,86 @@ const sampleQuestions = [
   "Pointers in C",
 ];
 
-type ChatMsg = { type: "user" | "bot"; message: string };
+type Message = { role: "user" | "assistant"; content: string };
 
-const INITIAL_MESSAGES: ChatMsg[] = [
-  {
-    type: "bot",
-    message:
-      "Yo! 👋 Main hoon tera study buddy. Koi bhi topic bolo — seedha simple language mein samjha dunga. Textbook wali boring language nahi!",
-  },
-];
+const GREETING: Message = {
+  role: "assistant",
+  content:
+    "Hey! 👋 I’m Btechverse Study Buddy. Drop any topic—DSA, DBMS, OS, whatever—I’ll explain in simple language. Hinglish or English, your call.",
+};
+
+const EXPLAIN_MORE_PROMPT =
+  "I still didn't get it. Please explain the same thing again in simpler English with more real-world examples.";
 
 export function AIAssistantSection() {
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState<ChatMsg[]>(INITIAL_MESSAGES);
+  const { user } = useAuth();
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([GREETING]);
   const [loading, setLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
+    const el = messagesContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages]);
 
-  const sendMessage = async (text: string) => {
+  const send = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
 
-    setQuestion("");
-    setMessages((prev) => [...prev, { type: "user", message: trimmed }]);
+    setInput("");
+    const userMsg: Message = { role: "user", content: trimmed };
+    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
-    try {
-      const chatHistory = messages
-        .concat([{ type: "user", message: trimmed }])
-        .map((m) => ({
-          role: m.type === "user" ? "user" as const : "assistant" as const,
-          content: m.message,
-        }));
+    const chatHistory = [...messages, userMsg].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
 
+    try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: chatHistory,
-          model: "gpt-3.5-turbo",
+          system: "Always answer in English only. If the user says they didn't get it, explain again in simpler English with real-world examples—still in English only.",
           max_tokens: 800,
           temperature: 0.7,
         }),
       });
 
-      let data: { error?: string; content?: string } = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        let errMsg = data.error || "Something went wrong. Try again.";
-        if (res.status === 404) {
-          errMsg =
-            "Chat API not running. From btechverse-hub run: npm run dev:all";
-        } else if (
-          res.status === 401 ||
-          /user not found|invalid|unauthorized|credits/i.test(errMsg)
-        ) {
-          errMsg =
-            "AI key invalid or out of credits. Get a free key at https://openrouter.ai/keys, add to btechverse-hub/.env as OPENAI_API_KEY=your_key, then restart (npm run dev:all).";
-        }
-        setMessages((prev) => [
-          ...prev,
-          { type: "bot", message: `Sorry — ${errMsg}` },
-        ]);
+      const errMsg = data.error || (!res.ok ? "Something went wrong." : null);
+      const content = data.content ?? (errMsg ? null : "No response.");
+
+      if (errMsg) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `Sorry — ${errMsg}` }]);
         return;
       }
 
-      const content = data.content ?? "Sorry, no response.";
-      setMessages((prev) => [...prev, { type: "bot", message: content }]);
-    } catch (err) {
+      setMessages((prev) => [...prev, { role: "assistant", content: content || "No response." }]);
+    } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          type: "bot",
-          message:
-            "Network error. From btechverse-hub run: npm run dev:all",
-        },
+        { role: "assistant", content: "Network error. Try again." },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage(question);
-  };
-
   return (
-    <section id="ai-assistant" className="section-padding relative overflow-hidden bg-muted/30">
+    <section id="ai-assistant" className="section-padding pt-12 md:pt-16 lg:pt-20 pb-12 md:pb-16 lg:pb-20 relative overflow-hidden bg-muted/30">
       <div className="absolute top-10 left-10 text-4xl opacity-20">🤖</div>
       <div className="absolute bottom-20 right-20 text-3xl opacity-20">💬</div>
 
@@ -121,12 +102,11 @@ export function AIAssistantSection() {
               initial={{ opacity: 0, rotate: 3 }}
               whileInView={{ opacity: 1, rotate: 0 }}
               viewport={{ once: true }}
-              className="sticker mb-6 inline-block"
+              className="inline-flex items-center gap-1.5 mb-6 px-3 py-1.5 border-2 border-foreground text-xs font-medium"
             >
-              <Sparkles className="h-3 w-3" />
-              AI POWERED
+              <Sparkles className="h-3.5 w-3.5" />
+              ASK ANYTHING
             </motion.div>
-
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -135,9 +115,8 @@ export function AIAssistantSection() {
             >
               Kuch samajh nahi aa raha?
               <br />
-              <span className="underline-sketch">Puch le.</span>
+              <span className="underline decoration-4 underline-offset-2">Puch le.</span>
             </motion.h2>
-
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -145,111 +124,95 @@ export function AIAssistantSection() {
               transition={{ delay: 0.1 }}
               className="text-lg text-muted-foreground mb-8 max-w-md"
             >
-              No more ghanto ka Google search. Yeh AI literally tera dost hai —
-              explain karega jaise hostel mein friend karta hai. Simple. Quick.
+              Skip the long Google digs. Ask here in simple language—Hinglish or English—and get answers that actually stick.
             </motion.p>
-
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="flex flex-wrap gap-2 mb-8"
+              className="flex flex-wrap gap-x-2 gap-y-2"
             >
-              <span className="text-sm text-muted-foreground mr-2">Try:</span>
-              {sampleQuestions.map((q, i) => (
+              {QUICK_QUESTIONS.map((q) => (
                 <button
                   key={q}
-                  onClick={() => sendMessage(q)}
+                  type="button"
+                  onClick={() => send(q)}
                   disabled={loading}
                   className="px-3 py-1.5 text-sm bg-card border-2 border-border hover:border-foreground transition-colors disabled:opacity-50"
-                  style={{ transform: `rotate(${i % 2 === 0 ? "-1" : "1"}deg)` }}
                 >
                   {q}
                 </button>
               ))}
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-wrap gap-4"
-            >
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Zap className="h-4 w-4 text-accent" />
-                100K+ doubts solved
-              </div>
-            </motion.div>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, x: 20, rotate: 1 }}
-            whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
             <div className="border-2 border-foreground bg-card overflow-hidden shadow-[6px_6px_0_0_hsl(var(--foreground))]">
               <div className="flex items-center gap-3 p-4 border-b-2 border-foreground bg-primary/5">
-                <div className="w-10 h-10 bg-primary flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary flex items-center justify-center shrink-0">
                   <Bot className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-foreground">AI Study Buddy</p>
-                  <p className="text-xs text-muted-foreground">
-                    24/7 available • Kabhi bore nahi hota
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground">Btechverse Study Buddy</p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className={`w-2 h-2 rounded-full ${loading ? "bg-amber-500 animate-pulse" : "bg-primary"}`}
-                  />
-                  <span className="text-xs text-primary font-medium">
-                    {loading ? "Typing..." : "Online"}
-                  </span>
-                </div>
+                <span className="text-xs font-medium text-primary">
+                  {loading ? "Typing..." : "Online"}
+                </span>
               </div>
 
-              <div className="p-4 space-y-4 min-h-[320px] max-h-[420px] overflow-y-auto bg-muted/20">
-                {messages.map((msg, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex gap-3 ${msg.type === "user" ? "justify-end" : ""}`}
+              <div ref={messagesContainerRef} className="p-4 space-y-4 min-h-[320px] max-h-[420px] overflow-y-auto bg-muted/20">
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}
                   >
-                    {msg.type === "bot" && (
-                      <div className="w-8 h-8 bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                    {msg.role === "assistant" && (
+                      <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
                         <Bot className="h-4 w-4 text-primary" />
                       </div>
                     )}
                     <div
-                      className={`max-w-[85%] p-3 text-sm ${
-                        msg.type === "user"
+                      className={`max-w-[85%] p-3 text-sm rounded ${
+                        msg.role === "user"
                           ? "bg-foreground text-background"
                           : "bg-card border-2 border-border"
                       }`}
-                      style={{
-                        transform: `rotate(${msg.type === "user" ? "0.5" : "-0.3"}deg)`,
-                      }}
                     >
-                      <p className="whitespace-pre-line">{msg.message}</p>
+                      <p className="whitespace-pre-line">{msg.content}</p>
                     </div>
-                    {msg.type === "user" && (
-                      <div className="w-8 h-8 bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                    {msg.role === "user" && (
+                      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0 border border-border">
                         <User className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
-
+                {!loading && messages.length > 1 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content !== GREETING.content && !messages[messages.length - 1].content.startsWith("Sorry") && !messages[messages.length - 1].content.startsWith("Network error") && (
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 shrink-0" />
+                    <button
+                      type="button"
+                      onClick={() => send(EXPLAIN_MORE_PROMPT)}
+                      className="max-w-[85%] p-3 text-left text-sm rounded bg-primary/10 border-2 border-primary/30 hover:border-primary hover:bg-primary/15 transition-colors"
+                    >
+                      <p className="text-foreground font-medium">
+                        Still didn&apos;t get it? Explain in simpler English with real examples →
+                      </p>
+                    </button>
+                  </div>
+                )}
                 {loading && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                    <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
                       <Bot className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="px-4 py-3 bg-card border-2 border-border">
+                    <div className="p-3 bg-card border-2 border-border rounded">
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     </div>
                   </div>
@@ -258,42 +221,40 @@ export function AIAssistantSection() {
               </div>
 
               <form
-                onSubmit={handleSubmit}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  send(input);
+                }}
                 className="p-4 border-t-2 border-foreground bg-card"
               >
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
                     placeholder="Kuch bhi puch lo..."
                     disabled={loading}
-                    className="flex-1 px-4 py-3 bg-muted text-sm border-2 border-border focus:outline-none focus:border-foreground transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-muted text-sm border-2 border-border focus:outline-none focus:border-foreground rounded transition-colors disabled:opacity-50"
                   />
                   <button
                     type="submit"
                     disabled={loading}
-                    className="p-3 bg-foreground text-background hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="p-3 bg-foreground text-background rounded hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
               </form>
             </div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-              className="text-sm text-muted-foreground mt-4 italic text-center"
-              style={{ fontFamily: "Georgia, serif" }}
-            >
-              ^ Real conversation. Aise hi samjhata hai! ✨
-            </motion.p>
           </motion.div>
         </div>
       </div>
+
+      <LoginRequiredModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        redirect="/#ai-assistant"
+      />
     </section>
   );
 }

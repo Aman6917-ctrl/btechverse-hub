@@ -81,3 +81,46 @@ export async function getPresignedUrl(rawUrl) {
   const signedUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
   return { url: signedUrl };
 }
+
+/** Firestore category → S3 folder name (matches sync-s3-materials) */
+const CATEGORY_TO_S3_FOLDER = {
+  "Handwritten-Notes": "notes",
+  "PPTs": "ppt",
+  "Previous-Year-Papers": "papers",
+};
+
+/**
+ * Get presigned PUT URL for admin upload. Returns uploadUrl (PUT file here) and fileUrl (store in Firestore; presign GET later).
+ * @param {{ branchCode: string, category: string, fileName: string, contentType?: string }} opts
+ * @returns {Promise<{ uploadUrl: string, fileUrl: string }>}
+ */
+export async function getUploadPresignedUrl(opts) {
+  loadEnv();
+  const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || "";
+  const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || "";
+  const AWS_REGION = process.env.AWS_REGION || "eu-north-1";
+  const S3_BUCKET = process.env.S3_BUCKET || "btech-verse";
+
+  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+    throw new Error("S3 credentials not configured");
+  }
+
+  const folder = CATEGORY_TO_S3_FOLDER[opts.category] || "notes";
+  const safeName = (opts.fileName || "file").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const key = `${opts.branchCode}/${folder}/${Date.now()}_${safeName}`;
+
+  const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+  const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+  const client = new S3Client({
+    region: AWS_REGION,
+    credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
+  });
+  const command = new PutObjectCommand({
+    Bucket: S3_BUCKET,
+    Key: key,
+    ContentType: opts.contentType || "application/octet-stream",
+  });
+  const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
+  const fileUrl = `https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key}`;
+  return { uploadUrl, fileUrl };
+}

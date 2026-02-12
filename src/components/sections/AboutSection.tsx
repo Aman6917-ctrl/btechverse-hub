@@ -1,104 +1,73 @@
 import { motion } from "framer-motion";
-import { Quote, Github, Twitter, Linkedin, Heart, Coffee, Moon, Code2 } from "lucide-react";
+import { Quote, Github, Youtube, Linkedin, Heart, Coffee, Moon, Code2 } from "lucide-react";
+import { useStudentCount } from "@/lib/student-count";
+
+const AMAN_PHOTO_URL = "https://media.licdn.com/dms/image/v2/D4E03AQHfPFrETpbONw/profile-displayphoto-crop_800_800/B4EZnObRwLIUAQ-/0/1760104882727?e=1772064000&v=beta&t=blqj0fVixvJKsxDkUyTBiSMUvSWC8mLkV8lZ2o4n51w";
 
 const team = [
-  { name: "Rahul", role: "The Coder", emoji: "💻", college: "NIT Trichy", funFact: "Lives on Monster Energy" },
-  { name: "Priya", role: "The Designer", emoji: "🎨", college: "IIT Delhi", funFact: "Figma > Sleep" },
-  { name: "Amit", role: "The Fixer", emoji: "🔧", college: "VIT Vellore", funFact: "Stack Overflow addict" },
+  { name: "Aman Verma", role: "Founder and Developer", emoji: "💻", image: AMAN_PHOTO_URL, college: "RCOEM", funFact: "Built this so you get notes without the struggle and real mentors to guide your future" },
 ];
 
 const testimonials = [
   {
-    quote: "Bhai ye site pehle mili hoti toh 3rd sem mein backlog nahi aata 😭",
-    author: "Random CSE Student",
-    college: "DTU",
+    quote: "Pehle mili hoti toh 3rd sem mein backlog nahi aata. Ab juniors ko bata raha hoon.",
+    author: "Rahul Sharma",
+    college: "YCCE",
     rating: 5
   },
   {
-    quote: "Finally someone made notes that don't look like ancient scriptures. Actually readable!",
-    author: "ECE Topper",
-    college: "NIT Karnataka", 
+    quote: "Notes that don’t look like ancient scriptures. Finally something I could actually read before exams.",
+    author: "Kalash Khobragade",
+    college: "IIT BHU",
     rating: 5
   },
   {
-    quote: "AI buddy ne ek raat mein DBMS samjha diya jo 3 months se pending tha",
-    author: "Backlog Survivor",
-    college: "IIIT Hyderabad",
+    quote: "DBMS 3 months se pending tha. Study Buddy ne ek raat mein samjha diya. No cap.",
+    author: "Ram Singh",
+    college: "VJTI",
     rating: 5
   }
 ];
 
 const funStats = [
-  { icon: Coffee, value: "∞", label: "Chai consumed", color: "text-amber-600" },
-  { icon: Moon, value: "0", label: "Sleep during exams", color: "text-indigo-500" },
-  { icon: Code2, value: "999+", label: "Bugs fixed", color: "text-primary" },
+  { icon: Coffee, value: "∞", label: "Cups of chai", color: "text-amber-600" },
+  { icon: Moon, value: "0", label: "Hours of sleep during exams", color: "text-indigo-500" },
+  { icon: Code2, value: "∞", label: "Bugs fixed (still counting)", color: "text-primary" },
   { icon: Heart, value: "25K+", label: "Students helped", color: "text-destructive" },
 ];
 
 export function AboutSection() {
+  const studentCount = useStudentCount();
   return (
-    <section id="about" className="section-padding relative overflow-hidden">
-      {/* Hand-drawn style background elements */}
-      <div className="absolute top-20 right-10 w-32 h-32 border-4 border-dashed border-primary/10 rounded-full" />
-      <div className="absolute bottom-40 left-20 w-20 h-20 border-4 border-dashed border-accent/10 rotate-45" />
-      
+    <section id="about" className="section-padding pt-12 md:pt-16 lg:pt-20 relative overflow-hidden">
       <div className="container relative">
-        {/* Section header with sticker */}
-        <div className="flex items-start gap-4 mb-12">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14">
+          {/* Left - Why this exists */}
           <div>
-            <motion.div
-              initial={{ opacity: 0, rotate: 5 }}
-              whileInView={{ opacity: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              className="sticker mb-4 inline-block"
-            >
-              THE STORY
-            </motion.div>
-            
             <motion.h2
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
+              className="text-2xl md:text-3xl font-bold mb-4 text-foreground"
             >
-              3 students.
-              <br />
-              <span className="text-muted-foreground">1 frustrating exam season.</span>
-              <br />
-              <span className="underline-sketch">This website.</span>
+              Why Btechverse exists
             </motion.h2>
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-16">
-          {/* Left - Story with personality */}
-          <div>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="space-y-6 text-lg text-muted-foreground mb-10"
+              transition={{ delay: 0.05 }}
+              className="space-y-4 text-muted-foreground"
             >
-              <p className="paper-card" style={{ transform: 'rotate(-0.5deg)' }}>
-                <span className="text-foreground font-semibold">December 2023, 3 AM.</span>
-                <br />
-                Exam in 8 hours. Notes kahi nahi mil rahe. 15 WhatsApp groups scroll kar chuke. 
-                Ek ne bola "Google Drive mein hai" — link expired. 💀
-              </p>
-              
               <p>
-                That night we decided — <span className="font-semibold text-foreground">isse fix karna hai.</span>
-                <br />
-                No fancy office. No investors. Just 3 laptops, unlimited chai, and a mission.
+                I did my diploma in Mechanical, then joined RCOEM and switched to AIML. New branch, no circle, notes kahin nahi—confusion and backlogs. I didn’t want the next batch to run into the same wall.
               </p>
-              
-              <div className="flex items-center gap-3 p-4 bg-primary/5 border-l-4 border-primary">
-                <span className="text-2xl">💡</span>
-                <p className="text-foreground font-medium">
-                  "Agar hum struggle kar rahe hain, toh lakhon students bhi kar rahe honge."
-                </p>
-              </div>
+              <p>
+                So this: one place for notes, PYQs, and a study buddy that actually explains. Plus real mentors (people from Google, Amazon, etc.) for 1:1 sessions. What I didn’t have then, I’m putting here.
+              </p>
+              <p className="text-foreground font-medium not-italic">
+                No funding, no big team. Just built it with care because it was needed.
+              </p>
             </motion.div>
 
             {/* Team Cards - Handcrafted style */}
@@ -109,43 +78,52 @@ export function AboutSection() {
               transition={{ delay: 0.2 }}
             >
               <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                The Team (Yes, just 3 of us)
+                The Team
               </p>
               <div className="space-y-3">
                 {team.map((member, index) => (
-                  <motion.div 
+                  <motion.div
                     key={member.name}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.3 + index * 0.1 }}
-                    className="flex items-center gap-4 p-4 bg-card border-2 border-border hover:border-foreground/30 transition-colors"
-                    style={{ transform: `rotate(${index % 2 === 0 ? '-0.5' : '0.5'}deg)` }}
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-card border-2 border-border rounded-lg hover:border-foreground/30 transition-colors"
                   >
-                    <div className="text-3xl">{member.emoji}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold">{member.name}</p>
-                        <span className="text-xs px-2 py-0.5 bg-muted rounded-full">{member.role}</span>
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="shrink-0 w-20 h-20 rounded-full overflow-hidden border-2 border-border bg-muted">
+                        {"image" in member && member.image ? (
+                          <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full text-2xl">{member.emoji}</span>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{member.college}</p>
+                      <div className="min-w-0">
+                        <p className="font-bold text-lg text-foreground">{member.name}</p>
+                        <span className="inline-block text-xs font-medium px-2.5 py-1 bg-muted text-muted-foreground rounded-md mt-1.5">
+                          {member.role}
+                        </span>
+                        <p className="text-sm text-muted-foreground mt-1">{member.college}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground italic hidden sm:block">"{member.funFact}"</p>
+                    <p className="text-sm text-muted-foreground italic border-l-2 border-border pl-4 sm:max-w-[260px] sm:flex-shrink-0">
+                      &ldquo;{member.funFact}&rdquo;
+                    </p>
                   </motion.div>
                 ))}
               </div>
 
               {/* Social Links */}
               <div className="flex gap-2 mt-6">
-                {[Github, Twitter, Linkedin].map((Icon, i) => (
-                  <a
-                    key={i}
-                    href="#"
-                    className="p-3 border-2 border-border hover:border-foreground hover:bg-foreground hover:text-background transition-all"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                ))}
+                <a href="https://github.com/Aman6917-ctrl" target="_blank" rel="noopener noreferrer" className="p-3 border-2 border-border hover:border-foreground hover:bg-foreground hover:text-background transition-all" aria-label="GitHub">
+                  <Github className="h-4 w-4" />
+                </a>
+                <a href="https://www.youtube.com/@aman_verma6917" target="_blank" rel="noopener noreferrer" className="p-3 border-2 border-border hover:border-foreground hover:bg-foreground hover:text-background transition-all" aria-label="YouTube">
+                  <Youtube className="h-4 w-4" />
+                </a>
+                <a href="https://www.linkedin.com/in/aman-verma-cse" target="_blank" rel="noopener noreferrer" className="p-3 border-2 border-border hover:border-foreground hover:bg-foreground hover:text-background transition-all" aria-label="LinkedIn">
+                  <Linkedin className="h-4 w-4" />
+                </a>
               </div>
             </motion.div>
           </div>
@@ -209,7 +187,7 @@ export function AboutSection() {
                   style={{ transform: `rotate(${index % 2 === 0 ? '-1' : '1'}deg)` }}
                 >
                   <stat.icon className={`h-5 w-5 mx-auto mb-2 ${stat.color}`} />
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-2xl font-bold">{stat.label === "Students helped" ? studentCount.toLocaleString() : stat.value}</p>
                   <p className="text-xs text-muted-foreground">{stat.label}</p>
                 </motion.div>
               ))}
@@ -224,8 +202,7 @@ export function AboutSection() {
               style={{ fontFamily: 'Georgia, serif' }}
             >
               <p className="text-sm italic text-amber-800 dark:text-amber-200">
-                P.S. — If this site helps you pass even one exam, 
-                share it with your batchmates. That's all we ask! 🙏
+                P.S. If this helps you clear even one paper, pass it on to your batch. That’s it. 🙏
               </p>
             </motion.div>
           </motion.div>

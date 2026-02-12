@@ -1,16 +1,53 @@
+import { useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import BranchMaterials from "./pages/BranchMaterials";
+import Mentors from "./pages/Mentors";
 import NoteViewPage from "./pages/NoteViewPage";
+import InterviewPrep from "./pages/InterviewPrep";
+import InterviewPrepQuestions from "./pages/InterviewPrepQuestions";
+import DsaPracticePage from "./pages/DsaPracticePage";
+import SqlPracticePage from "./pages/SqlPracticePage";
+import UploadPage from "./pages/UploadPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function DisableScrollRestoration() {
+  useLayoutEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+  return null;
+}
+
+function ScrollToTopOnMentors() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    if (pathname !== "/mentors") return;
+    const scrollTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    scrollTop();
+    const id = setTimeout(scrollTop, 0);
+    const rafId = requestAnimationFrame(scrollTop);
+    return () => {
+      clearTimeout(id);
+      cancelAnimationFrame(rafId);
+    };
+  }, [pathname]);
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,11 +61,19 @@ const App = () => (
             v7_relativeSplatPath: true,
           }}
         >
+          <DisableScrollRestoration />
+          <ScrollToTopOnMentors />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/branch/:code" element={<BranchMaterials />} />
-            <Route path="/view" element={<NoteViewPage />} />
+            <Route path="/branch/:code" element={<ProtectedRoute><BranchMaterials /></ProtectedRoute>} />
+            <Route path="/mentors" element={<ProtectedRoute><Mentors /></ProtectedRoute>} />
+            <Route path="/view" element={<ProtectedRoute><NoteViewPage /></ProtectedRoute>} />
+            <Route path="/interview-prep" element={<ProtectedRoute><InterviewPrep /></ProtectedRoute>} />
+            <Route path="/interview-prep/:company/dsa/practice/:questionIndex" element={<ProtectedRoute><DsaPracticePage /></ProtectedRoute>} />
+            <Route path="/interview-prep/:company/sql/practice/:questionIndex" element={<ProtectedRoute><SqlPracticePage /></ProtectedRoute>} />
+            <Route path="/interview-prep/:company/:type" element={<ProtectedRoute><InterviewPrepQuestions /></ProtectedRoute>} />
+            <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

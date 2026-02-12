@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Caveat:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -77,9 +77,49 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  [id="resources"],
+  [id="branches"],
+  [id="mentors"],
+  [id="ai-assistant"],
+  [id="about"] {
+    scroll-margin-top: 6rem;
+  }
+
+  /* Polish: smooth transitions on interactive elements */
+  a, button, [role="button"] {
+    @apply transition-colors duration-200;
+  }
+
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Instrument Sans', system-ui, sans-serif;
+    background-image: 
+      radial-gradient(ellipse 120% 80% at 50% -20%, hsl(var(--primary) / 0.04), transparent),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  /* Faadu selection & focus */
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -146,6 +186,14 @@
     transform: rotate(1deg);
   }
 
+  .sticker-green-soft {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wide;
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+    border: 2px solid hsl(var(--primary) / 0.4);
+    transform: rotate(1deg);
+  }
+
   .sticker-outline {
     @apply bg-background border-2 border-foreground;
     color: hsl(var(--foreground));
@@ -181,6 +229,20 @@
     transform: translate(-2px, -2px);
   }
 
+  /* Faadu CTA – same punch across site */
+  .btn-punch {
+    box-shadow: 4px 4px 0 hsl(var(--foreground));
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .btn-punch:hover {
+    box-shadow: 2px 2px 0 hsl(var(--foreground));
+    transform: translate(2px, 2px);
+  }
+  .btn-punch:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
+
   /* Scribble circle highlight */
   .highlight-circle {
     position: relative;
@@ -210,6 +272,15 @@
     height: 24px;
     background: hsl(60 80% 85% / 0.8);
     border: 1px solid hsl(60 30% 70%);
+  }
+
+  .handwritten {
+    font-family: 'Caveat', cursive;
+  }
+
+  .scrap-card {
+    @apply bg-card border-2 border-foreground;
+    box-shadow: 3px 3px 0 hsl(var(--foreground));
   }
 }
 
@@ -248,8 +319,9 @@
   }
 
   .marquee {
-    animation: marquee 25s linear infinite;
     width: max-content;
+    animation: marquee 35s linear infinite;
+    will-change: transform;
   }
 
   .marquee:hover {
@@ -257,8 +329,12 @@
   }
 
   @keyframes marquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(-50%, 0, 0);
+    }
   }
 
   .stagger-1 { animation-delay: 0.1s; }

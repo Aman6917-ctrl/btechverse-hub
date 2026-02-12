@@ -7,13 +7,27 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
+  setPersistence,
+  browserLocalPersistence,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/integrations/firebase/config";
+
+/** Comma-separated list of admin emails (env: VITE_ADMIN_EMAILS). First entry is default admin. */
+const DEFAULT_ADMIN_EMAILS = ["amanvverma109@gmail.com"];
+
+function getAdminEmails(): string[] {
+  const raw = import.meta.env.VITE_ADMIN_EMAILS;
+  const fromEnv = raw && typeof raw === "string"
+    ? raw.split(",").map((e: string) => e.trim().toLowerCase()).filter(Boolean)
+    : [];
+  return fromEnv.length > 0 ? fromEnv : DEFAULT_ADMIN_EMAILS;
+}
 
 interface AuthContextType {
   user: User | null;
   session: null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -28,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getFirebaseAuth();
 
   useEffect(() => {
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -67,12 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  const adminEmails = getAdminEmails();
+  const isAdmin = !!user?.email && adminEmails.includes(user.email.toLowerCase());
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session: null,
         loading,
+        isAdmin,
         signUp,
         signIn,
         signInWithGoogle,

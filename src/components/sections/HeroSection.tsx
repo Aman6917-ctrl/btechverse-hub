@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Star, Zap, Coffee, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useStudentCount } from "@/lib/student-count";
 
 // Company logos
 import oracleLogo from "@/assets/logos/oracle.png";
@@ -16,6 +17,12 @@ import amadeusLogo from "@/assets/logos/amadeus.png";
 import elitmusLogo from "@/assets/logos/elitmus.png";
 import adobeLogo from "@/assets/logos/adobe.png";
 
+const AMAZON_LOGO_URL =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/960px-Amazon_logo.svg.png";
+
+const NVIDIA_LOGO_URL =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/NVIDIA_logo.svg/1280px-NVIDIA_logo.svg.png";
+
 const companyLogos = [
   { name: "Oracle", logo: oracleLogo },
   { name: "Zoomcar", logo: zoomcarLogo },
@@ -29,11 +36,14 @@ const companyLogos = [
   { name: "Amadeus", logo: amadeusLogo },
   { name: "eLitmus", logo: elitmusLogo },
   { name: "Adobe", logo: adobeLogo },
+  { name: "Amazon", logo: AMAZON_LOGO_URL },
+  { name: "NVIDIA", logo: NVIDIA_LOGO_URL },
 ];
 
 export function HeroSection() {
+  const studentCount = useStudentCount();
   return (
-    <section className="min-h-screen flex flex-col justify-center pt-20 pb-12 relative overflow-hidden">
+    <section className="min-h-screen flex flex-col justify-center pt-20 pb-2 relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-dots opacity-30" />
       
@@ -70,7 +80,7 @@ export function HeroSection() {
           style={{ transform: 'rotate(3deg)' }}
         >
           <Coffee className="h-3 w-3" />
-          MADE AT 3AM
+          CRAFTED FOR STUDENTS
         </motion.div>
       </div>
 
@@ -99,9 +109,9 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0, rotate: 0 }}
               className="inline-block mb-8"
             >
-              <span className="sticker-green">
+              <span className="sticker-green-soft">
                 <Star className="h-3 w-3 fill-current" />
-                BY STUDENTS, FOR STUDENTS
+                BY A STUDENT, FOR STUDENTS
               </span>
             </motion.div>
 
@@ -124,11 +134,10 @@ export function HeroSection() {
               transition={{ delay: 0.2 }}
               className="text-lg md:text-xl text-muted-foreground max-w-xl mb-10"
             >
-              5000+ notes, PYQs, and presentations. Plus an AI buddy jo actually 
-              samjhata hai — ratta nahi marwata. 
+              Notes, PYQs, slides—all in one place. Btechverse Study Buddy explains in plain language, no rote. 
               <span className="inline-flex items-center gap-1 text-accent font-medium ml-1">
                 <Sparkles className="h-4 w-4" />
-                Ekdum free!
+                Free.
               </span>
             </motion.p>
 
@@ -139,12 +148,11 @@ export function HeroSection() {
               transition={{ delay: 0.3 }}
               className="flex flex-wrap gap-4 mb-16"
             >
-              <Button size="lg" variant="default" className="shadow-[4px_4px_0_0_hsl(var(--foreground))] hover:shadow-[2px_2px_0_0_hsl(var(--foreground))] hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
-                Browse Resources
-                <ArrowRight className="h-4 w-4" />
+              <Button size="lg" variant="default" className="btn-punch hover:scale-[1.02] active:scale-[0.98]" asChild>
+                <a href="/#branches">Browse Resources<ArrowRight className="h-4 w-4 ml-1 inline" /></a>
               </Button>
-              <Button size="lg" variant="outline" className="border-2">
-                Try AI Buddy
+              <Button size="lg" variant="outline" className="border-2 hover:border-primary hover:bg-primary/5 hover:scale-[1.02] active:scale-[0.98] transition-all" asChild>
+                <a href="/#ai-assistant">Try AI Assistant</a>
               </Button>
             </motion.div>
 
@@ -156,16 +164,16 @@ export function HeroSection() {
               className="flex flex-wrap gap-4"
             >
               <div className="px-5 py-3 bg-primary/5 border-2 border-primary/20 rounded-lg" style={{ transform: 'rotate(-1deg)' }}>
-                <p className="text-2xl font-bold text-primary">25K+</p>
+                <p className="text-2xl font-bold text-primary">{studentCount.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">Happy Students</p>
               </div>
               <div className="px-5 py-3 bg-accent/5 border-2 border-accent/20 rounded-lg" style={{ transform: 'rotate(1deg)' }}>
-                <p className="text-2xl font-bold text-accent">5000+</p>
+                <p className="text-2xl font-bold text-accent">1000+</p>
                 <p className="text-xs text-muted-foreground">Free Resources</p>
               </div>
               <div className="px-5 py-3 bg-muted border-2 border-border rounded-lg" style={{ transform: 'rotate(-0.5deg)' }}>
-                <p className="text-2xl font-bold">1M+</p>
-                <p className="text-xs text-muted-foreground">Downloads</p>
+                <p className="text-2xl font-bold">15+</p>
+                <p className="text-xs text-muted-foreground">Mentors</p>
               </div>
             </motion.div>
           </div>
@@ -271,20 +279,23 @@ export function HeroSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-20 -mx-6 md:mx-0"
+          className="mt-20 mb-0 -mx-6 md:mx-0"
         >
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 flex items-center justify-center gap-2 text-center">
-            <Sparkles className="h-3 w-3 text-accent" />
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 text-center">
             Get guidance from top mentors working in leading companies
           </p>
           <div className="relative overflow-hidden">
             <div className="flex gap-16 items-center marquee">
-            {[...companyLogos, ...companyLogos].map((company, i) => (
-                <div key={i} className="flex-shrink-0 h-8 w-28 flex items-center justify-center">
-                  <img 
-                    src={company.logo} 
+              {[...companyLogos, ...companyLogos].map((company, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 h-10 w-28 flex items-center justify-center"
+                  title={company.name}
+                >
+                  <img
+                    src={company.logo}
                     alt={company.name}
-                    className="h-6 w-auto max-w-28 object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                    className="max-h-8 w-auto max-w-[96px] object-contain object-center grayscale hover:grayscale-0 transition-all duration-300"
                   />
                 </div>
               ))}

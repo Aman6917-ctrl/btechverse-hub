@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 
@@ -26,6 +26,8 @@ const GoogleIcon = () => (
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
@@ -34,7 +36,7 @@ const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,13 +47,28 @@ export default function Auth() {
   const { signIn, signUp, signInWithGoogle, user, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
 
-  // Redirect if already logged in
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const goAfterLogin = (path?: string) => {
+    const target = path ?? redirectTo ?? "/";
+    navigate(target, { replace: true });
+    requestAnimationFrame(scrollToTop);
+    setTimeout(scrollToTop, 0);
+  };
+
+  // Redirect if already logged in – to requested redirect or homepage
   useEffect(() => {
     if (!loading && user) {
-      navigate("/");
+      goAfterLogin();
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, redirectTo]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -106,7 +123,10 @@ export default function Auth() {
             title: "Welcome back! 🎉",
             description: "Successfully logged in.",
           });
-          navigate("/");
+          // Navigate immediately so user leaves login page; use microtask so route updates reliably
+          const target = redirectTo || "/";
+          setTimeout(() => navigate(target, { replace: true }), 0);
+          requestAnimationFrame(() => scrollToTop());
         }
       } else {
         const { error } = await signUp(email, password);
@@ -162,7 +182,9 @@ export default function Auth() {
           title: "Welcome! 🎉",
           description: "Successfully signed in with Google.",
         });
-        navigate("/");
+        const target = redirectTo || "/";
+        setTimeout(() => navigate(target, { replace: true }), 0);
+        requestAnimationFrame(() => scrollToTop());
       }
     } catch (err) {
       toast({
@@ -177,160 +199,215 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-medium">Loading…</p>
+        </motion.div>
       </div>
     );
   }
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0 },
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="absolute inset-0 bg-dots opacity-30" />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md relative"
-      >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <a href="/" className="inline-block mb-6">
-            <span className="text-2xl font-bold text-primary">btechverse</span>
-          </a>
-          <h1 className="text-2xl font-bold mb-2">
-            {isLogin ? "Welcome Back! 👋" : "Join BTechVerse 🚀"}
-          </h1>
-          <p className="text-muted-foreground">
-            {isLogin 
-              ? "Login karein aur resources access karein" 
-              : "Free account banao aur start karo"}
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <main className="flex-1 flex pt-20 md:pt-24">
+        {/* Left panel - branding (hidden on small screens) */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="hidden lg:flex lg:w-[44%] xl:w-[48%] flex-col justify-center px-12 xl:px-20 py-16 bg-gradient-to-br from-primary/15 via-primary/5 to-background border-r border-border/50"
+        >
+          <h2 className="font-display text-3xl xl:text-4xl font-bold text-foreground tracking-tight mb-4 max-w-md">
+            Notes, mentors, and interview prep — all in one place.
+          </h2>
+          <p className="text-muted-foreground text-lg mb-10 max-w-sm">
+            Create a free account, access branch-wise materials, and connect with industry mentors.
           </p>
-        </div>
+          <ul className="space-y-4">
+            {["Branch-wise notes & PYQs", "1:1 mentor sessions", "Company-wise interview prep"].map((point, i) => (
+              <motion.li
+                key={point}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+                className="flex items-center gap-3 text-foreground font-medium"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-sm font-bold">
+                  {i + 1}
+                </span>
+                {point}
+              </motion.li>
+            ))}
+          </ul>
+        </motion.div>
 
-        {/* Form Card */}
-        <div className="bg-card border-2 border-foreground rounded-lg p-6 shadow-[6px_6px_0_0_hsl(var(--foreground))]">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full rounded-lg border-2 h-11 font-medium"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading || googleLoading}
+        {/* Right panel - form */}
+        <div className="flex-1 flex items-center justify-center px-4 py-10 sm:px-6 lg:px-12 min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-6rem)] relative">
+          <div className="absolute inset-0 bg-dots opacity-20 lg:opacity-0 pointer-events-none" aria-hidden />
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="w-full max-w-[420px] relative"
           >
-            {googleLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <span className="inline-flex items-center gap-2">
-                <GoogleIcon />
-                Continue with Google
-              </span>
-            )}
-          </Button>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setErrors((prev) => ({ ...prev, email: undefined }));
-                  }}
-                  className="pl-10"
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
+          <motion.div
+            variants={item}
+            className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 sm:p-8 shadow-xl shadow-foreground/5"
+          >
+            <div className="text-center mb-6">
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
+                {isLogin ? "Welcome back" : "Join BTechVerse"}
+              </h1>
+              <p className="text-muted-foreground text-sm sm:text-base">
+                {isLogin ? "Login karein aur resources access karein" : "Free account banao aur start karo"}
+              </p>
             </div>
 
-            {/* Password */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setErrors((prev) => ({ ...prev, password: undefined }));
-                  }}
-                  className="pl-10 pr-10"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-            </div>
-
-            {/* Submit Button */}
             <Button
-              type="submit"
-              className="w-full shadow-[4px_4px_0_0_hsl(var(--foreground))] hover:shadow-[2px_2px_0_0_hsl(var(--foreground))] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-              disabled={isLoading}
+              type="button"
+              variant="outline"
+              className="w-full rounded-xl border-2 h-12 font-medium bg-background/50 hover:bg-muted/50 transition-colors"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading || googleLoading}
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {googleLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <>
-                  {isLogin ? "Login" : "Create Account"}
-                  <ArrowRight className="h-4 w-4" />
-                </>
+                <span className="inline-flex items-center gap-2.5">
+                  <GoogleIcon />
+                  Continue with Google
+                </span>
               )}
             </Button>
-          </form>
 
-          {/* Toggle */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              {isLogin ? "Account nahi hai?" : "Already have an account?"}{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="text-primary font-medium hover:underline"
-              >
-                {isLogin ? "Sign Up" : "Login"}
-              </button>
-            </p>
-          </div>
-        </div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <span className="relative flex justify-center">
+                <span className="bg-card px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">or</span>
+              </span>
+            </div>
 
-        {/* Back to home */}
-        <div className="mt-6 text-center">
-          <a href="/" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Back to Home
-          </a>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <motion.div variants={item} className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    className="pl-10 rounded-xl h-11 border-2 focus-visible:ring-2 focus-visible:ring-primary/20"
+                    disabled={isLoading}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
+              </motion.div>
+
+              <motion.div variants={item} className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    className="pl-10 pr-10 rounded-xl h-11 border-2 focus-visible:ring-2 focus-visible:ring-primary/20"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
+              </motion.div>
+
+              <motion.div variants={item}>
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-200"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {isLogin ? "Login" : "Create account"}
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </form>
+
+            <motion.div variants={item} className="mt-6 pt-6 border-t border-border text-center">
+              <p className="text-sm text-muted-foreground">
+                {isLogin ? "Account nahi hai?" : "Already have an account?"}{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setErrors({});
+                  }}
+                  className="text-primary font-semibold hover:underline underline-offset-2"
+                >
+                  {isLogin ? "Sign up" : "Login"}
+                </button>
+              </p>
+            </motion.div>
+          </motion.div>
+
+          <motion.div variants={item} className="mt-6 text-center">
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors"
+            >
+              <span aria-hidden>←</span> Back to Home
+            </a>
+          </motion.div>
+        </motion.div>
         </div>
-      </motion.div>
+      </main>
+      <Footer />
     </div>
   );
 }

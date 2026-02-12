@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 
 const branches = [
   { name: "Computer Science", code: "CSE", materials: "1,200+", color: "bg-emerald-500" },
@@ -14,31 +17,43 @@ const branches = [
 ];
 
 export function BranchesSection() {
+  const { user } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [redirectTo, setRedirectTo] = useState("/");
+
+  const handleBranchClick = (e: React.MouseEvent, code: string) => {
+    if (!user) {
+      e.preventDefault();
+      setRedirectTo(`/branch/${encodeURIComponent(code)}`);
+      setShowLoginModal(true);
+    }
+  };
+
   return (
-    <section id="branches" className="section-padding bg-muted/30 relative overflow-hidden">
+    <section id="branches" className="section-padding pt-12 md:pt-16 lg:pt-20 pb-12 md:pb-16 lg:pb-20 bg-muted/30 relative overflow-hidden">
       {/* Grid background */}
       <div className="absolute inset-0 bg-grid opacity-50" />
       
       <div className="container relative">
         {/* Header */}
         <div className="max-w-2xl mb-12">
-          <motion.p
+          <motion.span
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-sm font-semibold text-primary mb-3"
+            className="sticker-green-soft mb-4 inline-block"
           >
             BRANCHES
-          </motion.p>
+          </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
           >
-            Pick your branch.
+            Choose your branch.
             <br />
-            <span className="text-muted-foreground">Get your stuff.</span>
+            <span className="text-muted-foreground">Notes, PYQs, slides—all here.</span>
           </motion.h2>
         </div>
 
@@ -48,13 +63,15 @@ export function BranchesSection() {
             <Link
               key={branch.code}
               to={`/branch/${encodeURIComponent(branch.code)}`}
+              onClick={(e) => handleBranchClick(e, branch.code)}
             >
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className="group flex items-center gap-4 p-4 rounded-xl bg-background border border-border hover:border-foreground/20 transition-all card-hover"
+                className="group flex items-center gap-4 p-4 paper-card transition-all duration-300 card-hover hover:scale-[1.02]"
+                style={{ transform: `rotate(${index % 3 === 0 ? 0.4 : index % 3 === 1 ? -0.3 : 0.2}deg)` }}
               >
                 <div className={`w-3 h-3 rounded-full ${branch.color}`} />
                 <div className="flex-1 min-w-0">
@@ -71,6 +88,12 @@ export function BranchesSection() {
           ))}
         </div>
       </div>
+
+      <LoginRequiredModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        redirect={redirectTo}
+      />
     </section>
   );
 }

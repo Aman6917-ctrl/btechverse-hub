@@ -1,7 +1,6 @@
 /**
- * Chat API for AI Buddy + S3 presigned URLs for View/Download.
- * Run: npm run dev:api  (port 3001)
- * Vite proxies /api/* to this server when using npm run dev.
+ * Dev API server: /api/presign (S3) and POST /api/chat (OpenRouter).
+ * Run: npm run dev:api (port 3001). Vite proxies /api to this when you run npm run dev.
  */
 import http from "http";
 import { readFileSync } from "fs";
@@ -23,10 +22,11 @@ function loadEnv() {
 
 loadEnv();
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const PORT = Number(process.env.CHAT_API_PORT) || 3001;
-
-const { getPresignedUrl } = await import("./presign.mjs");
+const { getPresignedUrl, getUploadPresignedUrl } = await import("./presign.mjs");
+const { handleChat } = await import("./chat.mjs");
+const { handleBookSession } = await import("./book-session.mjs");
+const { handleRunCode } = await import("./run-code.mjs");
 
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -39,12 +39,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const pathname = (req.url?.split("?")[0] || "").replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-  const query = Object.fromEntries(new URL(req.url || "", "http://x").searchParams);
+  const rawUrl = req.url || "";
+  let pathname = rawUrl.split("?")[0] || "/";
+  if (pathname.startsWith("http://") || pathname.startsWith("https://")) {
+    try {
+      pathname = new URL(pathname).pathname;
+    } catch (_) {}
+  }
+  pathname = pathname.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+  const query = Object.fromEntries(new URL(rawUrl.startsWith("http") ? rawUrl : "http://x" + rawUrl).searchParams);
 
-  // GET .../presign?url=... – S3 presigned URL (Vite proxies /api to this server)
-  const isPresign = req.method === "GET" && pathname.includes("presign");
-  if (isPresign) {
+  const isBookSession = pathname === "/api/book-session" || pathname.endsWith("/book-session");
+
+  // POST /api/book-session – check first, exact path
+  if ((req.method || "").toUpperCase() === "POST" && isBookSession) {
+    console.log("[api] POST /api/book-session");
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = Buffer.concat(chunks).toString("utf8") || "{}";
+    try {
+      const out = await handleBookSession(body);
+      res.writeHead(out.statusCode, { "Content-Type": "application/json" });
+      res.end(out.body);
+    } catch (err) {
+      console.error("[book-session]", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: String(err?.message || err) }));
+    }
+    return;
+  }
+
+  // GET /api/presign?url=...
+  if (req.method === "GET" && pathname.includes("presign")) {
     const rawUrl = query.url;
     if (!rawUrl) {
       res.writeHead(400, { "Content-Type": "application/json" });
@@ -56,122 +82,71 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ url }));
     } catch (err) {
-      console.error("[presign] S3 error:", err.message);
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: err.message || "Failed to generate presigned URL" }));
+      res.end(JSON.stringify({ error: String(err?.message || err) }));
     }
     return;
   }
 
-  const isChat = pathname === "/api/chat" || pathname === "/chat";
-  if (req.method !== "POST" || !isChat) {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found" }));
+  // POST /api/chat (OpenRouter) – exact path so /api/book-session doesn't match
+  if (pathname === "/api/chat" && (req.method || "").toUpperCase() === "POST") {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const out = await handleChat(body);
+    res.writeHead(out.statusCode, { "Content-Type": "application/json" });
+    res.end(out.body);
     return;
   }
 
-  if (!OPENAI_API_KEY) {
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "OPENAI_API_KEY not set in .env" }));
-    return;
-  }
-
-  let body = "";
-  for await (const chunk of req) body += chunk;
-
-  let data;
-  try {
-    data = JSON.parse(body);
-  } catch {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Invalid JSON" }));
-    return;
-  }
-
-  const messages = data.messages || [];
-  let model = data.model || "gpt-3.5-turbo";
-
-  const systemPrompt =
-    "You are BTechVerse AI, a friendly study buddy for BTech students. Explain concepts in simple, casual Hinglish when appropriate. Be encouraging and clear. Keep answers concise but helpful.";
-
-  const payload = {
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ],
-    max_tokens: data.max_tokens ?? 800,
-    temperature: data.temperature ?? 0.7,
-  };
-
-  // sk-or-* = OpenRouter key → use OpenRouter endpoint; else OpenAI
-  const isOpenRouter = OPENAI_API_KEY.startsWith("sk-or-");
-  if (isOpenRouter) {
-    // Use free model so it works without credits (OpenRouter :free variant)
-    payload.model = "google/gemini-2.0-flash-exp:free";
-  }
-  const chatUrl = isOpenRouter
-    ? "https://openrouter.ai/api/v1/chat/completions"
-    : "https://api.openai.com/v1/chat/completions";
-
-  try {
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    };
-    if (isOpenRouter) {
-      headers["Referer"] = "http://localhost:8080";
-      headers["X-Title"] = "BTechVerse";
-    }
-    const response = await fetch(chatUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    let result = {};
+  // POST /api/upload-presign – S3 presigned PUT for admin upload
+  if (pathname === "/api/upload-presign" && (req.method || "").toUpperCase() === "POST") {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = Buffer.concat(chunks).toString("utf8") || "{}";
     try {
-      result = await response.json();
-    } catch {
-      result = { error: "Invalid response from AI provider" };
+      const data = JSON.parse(body);
+      const { uploadUrl, fileUrl } = await getUploadPresignedUrl({
+        branchCode: data.branchCode,
+        category: data.category,
+        fileName: data.fileName,
+        contentType: data.contentType,
+      });
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ uploadUrl, fileUrl }));
+    } catch (err) {
+      console.error("[upload-presign]", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: String(err?.message || err) }));
     }
-
-    if (!response.ok) {
-      const err =
-        result?.error?.message ??
-        result?.error ??
-        result?.message ??
-        (typeof result?.error === "string" ? result.error : null);
-      let msg = err || `Request failed (${response.status})`;
-      const errStr = String(msg).toLowerCase();
-      const isKeyError =
-        response.status === 401 ||
-        errStr.includes("user not found") ||
-        errStr.includes("invalid api key") ||
-        errStr.includes("unauthorized");
-      if (isKeyError && isOpenRouter) {
-        msg =
-          "API key invalid or out of credits. Get a free key at https://openrouter.ai/keys and add it to .env as OPENAI_API_KEY, then restart: npm run dev:api";
-      }
-      res.writeHead(response.status, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: typeof msg === "string" ? msg : String(msg) }));
-      return;
-    }
-
-    const content = result.choices?.[0]?.message?.content ?? "Sorry, no response.";
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ content, usage: result.usage }));
-  } catch (err) {
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: err.message || "API request failed" }));
+    return;
   }
+
+  // POST /api/run-code – run Python (and optionally other langs) on server
+  if (pathname === "/api/run-code" && (req.method || "").toUpperCase() === "POST") {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = Buffer.concat(chunks).toString("utf8") || "{}";
+    try {
+      const out = await handleRunCode(body);
+      res.writeHead(out.statusCode, { "Content-Type": "application/json" });
+      res.end(out.body);
+    } catch (err) {
+      console.error("[run-code]", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: String(err?.message || err) }));
+    }
+    return;
+  }
+
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Not found" }));
 });
 
 server.listen(PORT, () => {
-  console.log(`AI Buddy API running at http://localhost:${PORT}/api/chat`);
+  console.log(`API: http://localhost:${PORT} (presign + chat + book-session)`);
 }).on("error", (err) => {
   if (err.code === "EADDRINUSE") {
-    console.error(`Port ${PORT} is already in use. Kill it with: kill $(lsof -t -i:${PORT})`);
+    console.error(`Port ${PORT} in use. Run: kill $(lsof -t -i:${PORT})`);
     process.exit(1);
   }
   throw err;

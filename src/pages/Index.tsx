@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { StatsSection } from "@/components/sections/StatsSection";
@@ -9,6 +11,21 @@ import { AboutSection } from "@/components/sections/AboutSection";
 import { Footer } from "@/components/layout/Footer";
 
 const Index = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const hash = location.hash.slice(1); // e.g. "ai-assistant" or "resources"
+    if (hash) {
+      const el = document.getElementById(hash);
+      if (el) {
+        const t = setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+        return () => clearTimeout(t);
+      }
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, [location.pathname, location.hash]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
