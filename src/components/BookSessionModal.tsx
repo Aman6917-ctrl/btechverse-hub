@@ -74,6 +74,14 @@ export function BookSessionModal({ open, onOpenChange, mentorName, mentorEmail, 
     setSubmitting(true);
     try {
       const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+      if (!apiBase && typeof window !== "undefined" && !window.location.hostname.includes("localhost")) {
+        toast({
+          title: "API not configured",
+          description: "Backend URL is missing. Set VITE_API_BASE_URL in production.",
+          variant: "destructive",
+        });
+        return;
+      }
       const res = await fetch(`${apiBase}/api/book-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

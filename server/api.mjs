@@ -22,7 +22,8 @@ function loadEnv() {
 
 loadEnv();
 
-const PORT = Number(process.env.CHAT_API_PORT) || 3001;
+// Render/Railway set PORT; local dev uses CHAT_API_PORT or 3001
+const PORT = Number(process.env.PORT) || Number(process.env.CHAT_API_PORT) || 3001;
 const { getPresignedUrl, getUploadPresignedUrl } = await import("./presign.mjs");
 const { handleChat } = await import("./chat.mjs");
 const { handleBookSession } = await import("./book-session.mjs");
