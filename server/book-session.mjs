@@ -107,6 +107,22 @@ function buildWhatsAppMessage(data) {
   ].join("\n");
 }
 
+/**
+ * Resend expects from = "email@domain.com" or "Name <email@domain.com>".
+ * Normalize env value (strip quotes, fix format) so it always passes validation.
+ */
+function normalizeFromEmail(raw) {
+  const s = String(raw || "").trim().replace(/^["']|["']$/g, "").trim();
+  if (!s) return "Btechverse <onboarding@resend.dev>";
+  const match = s.match(/<([^>]+)>/);
+  const email = match ? match[1].trim() : s.includes("@") ? s : "";
+  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const name = match ? s.replace(/<[^>]+>/, "").trim() || "Btechverse" : "Btechverse";
+    return `${name} <${email}>`;
+  }
+  return "Btechverse <onboarding@resend.dev>";
+}
+
 /** Send WhatsApp via Twilio. phone = E.164 e.g. 919876543210. creds = { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM } */
 async function sendWhatsApp(phone, message, creds) {
   const sid = (creds && creds.TWILIO_ACCOUNT_SID) || process.env.TWILIO_ACCOUNT_SID;
@@ -155,7 +171,7 @@ export async function handleBookSession(body) {
     const env = getBookSessionEnv();
     const adminEmail = env.BOOK_SESSION_ADMIN_EMAIL;
     const adminWhatsapp = env.BOOK_SESSION_ADMIN_WHATSAPP;
-    const fromEmail = env.RESEND_FROM_EMAIL || "Btechverse <onboarding@resend.dev>";
+    const fromEmail = normalizeFromEmail(env.RESEND_FROM_EMAIL || "Btechverse <onboarding@resend.dev>");
 
     const envPath = getEnvPath();
     console.log("[book-session] .env loaded from:", envPath || "NOT FOUND (add .env in project root)");
