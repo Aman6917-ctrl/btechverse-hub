@@ -143,15 +143,22 @@ type HRAnalysisResult = {
   improvedAnswer: string;
 };
 
-const HR_ANALYSIS_SYSTEM = `You are an expert HR interview coach. The user will send an HR interview question and their written answer. You must respond with a valid JSON object only (no markdown, no code block, no extra text) in this exact shape:
+const HR_ANALYSIS_SYSTEM = `You are an expert HR interview coach. The user will send one specific HR interview question and the candidate's written answer. You must respond with a valid JSON object only (no markdown, no code block, no extra text) in this exact shape:
 {"overallScore": <number 1-10>, "criteria": {"structure": <1-10>, "relevance": <1-10>, "star": <1-10>, "clarity": <1-10>}, "feedback": ["point1", "point2", ...], "improvedAnswer": "<full improved answer text>"}
-- overallScore: overall quality 1-10.
-- criteria: structure (organization), relevance (to question), star (STAR/situation-based), clarity (language).
-- feedback: 3-5 short bullets on where they went wrong and what to improve.
-- improvedAnswer: a polished, professional version of their answer (2-4 sentences).`;
+
+Rules:
+- overallScore: overall quality 1-10 for this specific question.
+- criteria: structure (clear flow), relevance (did they actually answer THIS question—e.g. "Why Oracle?" needs reasons for Oracle, not just intro), star (STAR where applicable), clarity (language).
+- relevance: Score LOW if the candidate did not address what was asked (e.g. only introduced themselves instead of answering "why this company").
+- feedback: 3-5 short bullets. Must mention whether they answered the question or not. Be specific to this question and this answer.
+- improvedAnswer: Must answer THE SAME question that was asked. Use the candidate's real details (college, experience, company names) and weave them into a proper answer to that question. Do not give a generic template—their specific facts must appear in the improved answer. 2-4 sentences, professional tone.`;
 
 function buildHRAnalysisUserPrompt(question: string, answer: string): string {
-  return `Question: ${question}\n\nCandidate's answer: ${answer}\n\nAnalyze and respond with the JSON object only.`;
+  return `Interview question: "${question}"
+
+Candidate's answer: "${answer}"
+
+Analyze only for this question. Score relevance by whether they actually answered this question. In improvedAnswer, answer the same question using the candidate's real details (college, experience, etc.). Respond with the JSON object only.`;
 }
 
 function parseHRAnalysisResponse(content: string): HRAnalysisResult | null {
