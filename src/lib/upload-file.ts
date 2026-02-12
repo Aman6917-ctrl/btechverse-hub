@@ -2,10 +2,7 @@
  * Upload a file to S3 via presigned PUT URL from the API.
  * File goes to: S3 bucket, key = {branchCode}/{notes|ppt|papers}/{timestamp}_{fileName}
  */
-async function getApiBase(): Promise<string> {
-  if (typeof window === "undefined") return "";
-  return window.location.origin;
-}
+import { getApiBase } from "@/lib/api-base";
 
 export async function uploadResourceFile(
   file: File,
@@ -13,7 +10,7 @@ export async function uploadResourceFile(
   category: string
 ): Promise<{ url: string } | { error: string }> {
   try {
-    const base = await getApiBase();
+    const base = getApiBase();
     const res = await fetch(`${base}/api/upload-presign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

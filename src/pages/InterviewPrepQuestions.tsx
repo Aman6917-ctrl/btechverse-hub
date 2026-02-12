@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
+import { getApiBase } from "@/lib/api-base";
 
 const TYPE_LABELS: Record<string, string> = {
   hr: "HR Questions",
@@ -228,7 +229,7 @@ export default function InterviewPrepQuestions() {
       return next;
     });
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${getApiBase()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

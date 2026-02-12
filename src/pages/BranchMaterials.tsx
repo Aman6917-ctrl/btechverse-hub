@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { BranchMaterialsData, MaterialItem } from "@/types/branch-materials";
 import { loadBranchResourcesFromFirestore } from "@/lib/resources-firestore";
+import { getApiBase } from "@/lib/api-base";
 
 const BRANCH_NAMES: Record<string, string> = {
   CSE: "Computer Science Engineering",
@@ -66,7 +67,7 @@ function MaterialCard({
     if (loading) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/presign?url=${encodeURIComponent(item.url)}`);
+      const res = await fetch(`${getApiBase()}/api/presign?url=${encodeURIComponent(item.url)}`);
       const data = await res.json().catch(() => ({}));
       const targetUrl = res.ok && data.url ? data.url : res.ok ? item.url : null;
       if (targetUrl) {

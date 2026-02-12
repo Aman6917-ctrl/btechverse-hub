@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getApiBase } from "@/lib/api-base";
 
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year / Passed Out"] as const;
 
@@ -73,15 +74,7 @@ export function BookSessionModal({ open, onOpenChange, mentorName, mentorEmail, 
   async function onSubmit(values: BookSessionFormValues) {
     setSubmitting(true);
     try {
-      const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-      if (!apiBase && typeof window !== "undefined" && !window.location.hostname.includes("localhost")) {
-        toast({
-          title: "API not configured",
-          description: "Backend URL is missing. Set VITE_API_BASE_URL in production.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const apiBase = getApiBase();
       const res = await fetch(`${apiBase}/api/book-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Bot, User, Send, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getApiBase } from "@/lib/api-base";
 
 type ChatMsg = { type: "user" | "bot"; message: string };
 
@@ -37,7 +38,7 @@ export default function NoteViewPage() {
     }
     let cancelled = false;
     setPdfError(null);
-    fetch(`/api/presign?url=${encodeURIComponent(rawUrl)}`)
+    fetch(`${getApiBase()}/api/presign?url=${encodeURIComponent(rawUrl)}`)
       .then((res) => res.json().catch(() => ({})))
       .then((data) => {
         if (cancelled) return;
@@ -67,7 +68,7 @@ export default function NoteViewPage() {
       }));
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${getApiBase()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -3,6 +3,7 @@ import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
+import { getApiBase } from "@/lib/api-base";
 
 const QUICK_QUESTIONS = [
   "Binary search samjhao",
@@ -58,7 +59,7 @@ export function AIAssistantSection() {
     }));
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${getApiBase()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

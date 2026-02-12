@@ -2,6 +2,7 @@
  * Run user code in the browser (JS/TS) or via API (Python).
  * Expects code to define a function `solve` that we call with parsed input.
  */
+import { getApiBase } from "@/lib/api-base";
 
 const RUN_TIMEOUT_MS = 5000;
 
@@ -110,7 +111,7 @@ export async function runCodeOnServer(
     }
   }
   try {
-    const res = await fetch("/api/run-code", {
+    const res = await fetch(`${getApiBase()}/api/run-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ language, code, input }),
