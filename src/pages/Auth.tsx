@@ -44,11 +44,28 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { signIn, signUp, signInWithGoogle, user, loading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user, loading, redirectError, clearRedirectError } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+
+  // Show toast when returning from Google redirect with an error (e.g. user cancelled)
+  useEffect(() => {
+    if (redirectError) {
+      const code = (redirectError as { code?: string }).code;
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request" || code === "auth/user-cancelled") {
+        toast({ title: "Sign-in cancelled", description: "Google sign-in was cancelled." });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Google sign-in failed",
+          description: redirectError.message,
+        });
+      }
+      clearRedirectError();
+    }
+  }, [redirectError, clearRedirectError, toast]);
 
   const scrollToTop = () => {
     window.scrollTo(0, 0);
@@ -168,24 +185,14 @@ export default function Auth() {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        const code = (error as { code?: string }).code;
-        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-          return;
-        }
         toast({
           variant: "destructive",
           title: "Google sign-in failed",
           description: error.message,
         });
-      } else {
-        toast({
-          title: "Welcome! 🎉",
-          description: "Successfully signed in with Google.",
-        });
-        const target = redirectTo || "/";
-        setTimeout(() => navigate(target, { replace: true }), 0);
-        requestAnimationFrame(() => scrollToTop());
       }
+      // With redirect flow, successful sign-in redirects to Google; we don't get here.
+      // After redirect back, user is set and the "Redirect if already logged in" effect runs.
     } catch (err) {
       toast({
         variant: "destructive",

@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import type { User } from "firebase/auth";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   setPersistence,
@@ -28,10 +29,13 @@ interface AuthContextType {
   session: null;
   loading: boolean;
   isAdmin: boolean;
+  /** Set when returning from Google redirect with an error (e.g. user cancelled). Clear after reading. */
+  redirectError: Error | null;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  clearRedirectError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,10 +43,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [redirectError, setRedirectError] = useState<Error | null>(null);
   const auth = getFirebaseAuth();
 
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence).catch(() => {});
+    getRedirectResult(auth)
+      .then(() => {})
+      .catch((err) => setRedirectError(err as Error));
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -71,12 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
       return { error: null };
     } catch (err) {
       return { error: err as Error };
     }
   };
+
+  const clearRedirectError = useCallback(() => setRedirectError(null), []);
 
   const signOut = async () => {
     await firebaseSignOut(auth);
@@ -92,10 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session: null,
         loading,
         isAdmin,
+        redirectError,
         signUp,
         signIn,
         signInWithGoogle,
         signOut,
+        clearRedirectError,
       }}
     >
       {children}
