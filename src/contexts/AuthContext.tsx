@@ -51,11 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | null = null;
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    // Consume redirect result first so auth state is correct before we listen.
-    // Otherwise onAuthStateChanged can fire with null before redirect is applied.
+    // Consume redirect result and set user explicitly so redirect-after-login always updates UI.
     getRedirectResult(auth)
       .then((result) => {
-        if (result) setRedirectError(null);
+        if (cancelled) return;
+        if (result?.user) {
+          setRedirectError(null);
+          setUser(result.user);
+          setLoading(false);
+        }
       })
       .catch((err) => {
         if (!cancelled) setRedirectError(err as Error);
