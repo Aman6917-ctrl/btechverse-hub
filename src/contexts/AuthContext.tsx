@@ -4,8 +4,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   setPersistence,
@@ -29,7 +28,7 @@ interface AuthContextType {
   session: null;
   loading: boolean;
   isAdmin: boolean;
-  /** Set when returning from Google redirect with an error (e.g. user cancelled). Clear after reading. */
+  /** Set when Google sign-in fails (e.g. user cancelled popup). Clear after reading. */
   redirectError: Error | null;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -47,32 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getFirebaseAuth();
 
   useEffect(() => {
-    let cancelled = false;
-    // Set up listener first so we don't miss the auth update when getRedirectResult runs
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
     });
-
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
-
-    getRedirectResult(auth)
-      .then((result) => {
-        if (cancelled) return;
-        if (result?.user) {
-          setRedirectError(null);
-          setUser(result.user);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setRedirectError(err as Error);
-      });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [auth]);
 
   const signUp = async (email: string, password: string) => {
@@ -96,9 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
       return { error: null };
     } catch (err) {
+      const code = (err as { code?: string })?.code;
+      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
+        setRedirectError(err as Error);
+      }
       return { error: err as Error };
     }
   };

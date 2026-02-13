@@ -78,21 +78,23 @@ export default function Auth() {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
     let target = path ?? redirectTo ?? "/";
-    // Never redirect back to auth page (avoids redirect loop)
     if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    const fullUrl = target.startsWith("http")
-      ? target
-      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
-    // Full page redirect after a short delay so Firebase can persist and redirect always works (e.g. after Google sign-in)
-    setTimeout(() => window.location.replace(fullUrl), 150);
+    if (target.startsWith("http")) {
+      window.location.replace(target);
+      return;
+    }
+    const pathname = target.startsWith("/") ? target : `/${target}`;
+    navigate(pathname, { replace: true });
+    requestAnimationFrame(scrollToTop);
+    setTimeout(scrollToTop, 0);
   };
 
-  // Redirect if already logged in
+  // Redirect when already logged in (e.g. after popup sign-in or page refresh)
   useEffect(() => {
     if (!loading && user) {
       goAfterLogin();
     }
-  }, [user, loading, redirectTo]);
+  }, [user, loading, redirectTo, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -192,14 +194,17 @@ export default function Auth() {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
+        const code = (error as { code?: string }).code;
+        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
         toast({
           variant: "destructive",
           title: "Google sign-in failed",
           description: error.message,
         });
+      } else {
+        toast({ title: "Welcome! 🎉", description: "Signed in with Google." });
+        // onAuthStateChanged will set user; effect will call goAfterLogin()
       }
-      // With redirect flow, successful sign-in redirects to Google; we don't get here.
-      // After redirect back, user is set and the "Redirect if already logged in" effect runs.
     } catch (err) {
       toast({
         variant: "destructive",
