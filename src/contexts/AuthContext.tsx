@@ -48,10 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
+    // Set up listener first so we don't miss the auth update when getRedirectResult runs
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    // Consume redirect result and set user explicitly so redirect-after-login always updates UI.
     getRedirectResult(auth)
       .then((result) => {
         if (cancelled) return;
@@ -63,18 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => {
         if (!cancelled) setRedirectError(err as Error);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          setUser(firebaseUser);
-          setLoading(false);
-        });
       });
 
     return () => {
       cancelled = true;
-      if (unsubscribe) unsubscribe();
+      unsubscribe();
     };
   }, [auth]);
 

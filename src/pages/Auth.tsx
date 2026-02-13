@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
@@ -49,6 +49,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
+  const hasRedirected = useRef(false);
 
   // Show toast when returning from Google redirect with an error (e.g. user cancelled)
   useEffect(() => {
@@ -74,18 +75,24 @@ export default function Auth() {
   };
 
   const goAfterLogin = (path?: string) => {
-    const target = path ?? redirectTo ?? "/";
-    navigate(target, { replace: true });
-    requestAnimationFrame(scrollToTop);
-    setTimeout(scrollToTop, 0);
+    if (hasRedirected.current) return;
+    hasRedirected.current = true;
+    let target = path ?? redirectTo ?? "/";
+    // Never redirect back to auth page (avoids redirect loop)
+    if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
+    const fullUrl = target.startsWith("http")
+      ? target
+      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
+    // Full page redirect after a short delay so Firebase can persist and redirect always works (e.g. after Google sign-in)
+    setTimeout(() => window.location.replace(fullUrl), 150);
   };
 
-  // Redirect if already logged in – to requested redirect or homepage
+  // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
       goAfterLogin();
     }
-  }, [user, loading, navigate, redirectTo]);
+  }, [user, loading, redirectTo]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
