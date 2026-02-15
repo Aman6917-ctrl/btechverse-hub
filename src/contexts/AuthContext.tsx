@@ -57,7 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getRedirectResult(auth)
       .then((result) => {
-        if (result?.user) setRedirectError(null);
+        if (result?.user) {
+          setRedirectError(null);
+          setUser(result.user);
+          setLoading(false);
+        }
       })
       .catch((err) => setRedirectError(err as Error));
 
