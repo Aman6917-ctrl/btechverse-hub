@@ -79,14 +79,11 @@ export default function Auth() {
     hasRedirected.current = true;
     let target = path ?? redirectTo ?? "/";
     if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    if (target.startsWith("http")) {
-      window.location.replace(target);
-      return;
-    }
-    const pathname = target.startsWith("/") ? target : `/${target}`;
-    navigate(pathname, { replace: true });
-    requestAnimationFrame(scrollToTop);
-    setTimeout(scrollToTop, 0);
+    const fullUrl = target.startsWith("http")
+      ? target
+      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
+    // Full page redirect so we definitely leave /auth (React Router navigate was leaving on same page)
+    window.location.replace(fullUrl);
   };
 
   // Redirect when already logged in (e.g. after popup sign-in or page refresh)
