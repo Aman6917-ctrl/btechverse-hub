@@ -79,22 +79,19 @@ export default function Auth() {
     hasRedirected.current = true;
     let target = path ?? redirectTo ?? "/";
     if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    if (target.startsWith("http")) {
-      window.location.replace(target);
-      return;
-    }
-    const pathname = target.startsWith("/") ? target : `/${target}`;
-    navigate(pathname, { replace: true });
-    requestAnimationFrame(scrollToTop);
-    setTimeout(scrollToTop, 0);
+    const fullUrl = target.startsWith("http")
+      ? target
+      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
+    // Full page redirect so we always leave /auth after Google return (avoids same-page stuck)
+    setTimeout(() => window.location.replace(fullUrl), 100);
   };
 
-  // Redirect when already logged in (e.g. after popup sign-in or page refresh)
+  // When user is logged in on this page, redirect to home/target
   useEffect(() => {
     if (!loading && user) {
       goAfterLogin();
     }
-  }, [user, loading, redirectTo, navigate]);
+  }, [user, loading, redirectTo]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};

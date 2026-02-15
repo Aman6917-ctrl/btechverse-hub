@@ -47,36 +47,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getFirebaseAuth();
 
   useEffect(() => {
-    let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
-
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    // After Google redirect we must run getRedirectResult() first to apply the sign-in, then listen
+    // Listener first so when getRedirectResult() applies sign-in, we get the user immediately
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+
     getRedirectResult(auth)
       .then((result) => {
-        if (cancelled) return;
-        if (result?.user) {
-          setRedirectError(null);
-          setUser(result.user);
-          setLoading(false);
-        }
+        if (result?.user) setRedirectError(null);
       })
-      .catch((err) => {
-        if (!cancelled) setRedirectError(err as Error);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          setUser(firebaseUser);
-          setLoading(false);
-        });
-      });
+      .catch((err) => setRedirectError(err as Error));
 
-    return () => {
-      cancelled = true;
-      if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe();
   }, [auth]);
 
   const signUp = async (email: string, password: string) => {
