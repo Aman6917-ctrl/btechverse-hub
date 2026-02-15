@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { FivetranGridFooter } from "@/components/FivetranGridFooter";
+import logoImage from "@/assets/logo.png";
 
 const links = {
   resources: [
@@ -97,7 +98,7 @@ export function Footer() {
             transition={{ duration: 0.4, ease: "easeOut" }}
           >
             <a href="/" className="flex items-center gap-2 mb-4">
-              <img src="/favicon.svg" alt="Btechverse" className="h-8 w-8 flex-shrink-0" />
+              <img src={logoImage} alt="Btechverse" className="h-8 w-auto" />
               <span className="text-lg font-bold">
                 Btech<span className="text-primary">verse</span>
               </span>
