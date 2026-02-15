@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const unsubRef = { current: null as (() => void) | null };
+    let didSetUserFromRedirect = false;
 
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
@@ -60,14 +61,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRedirectError(null);
           setUser(result.user);
           setLoading(false);
+          didSetUserFromRedirect = true;
+        } else if (auth.currentUser) {
+          // Redirect was already consumed (e.g. React Strict Mode ran effect twice)
+          setRedirectError(null);
+          setUser(auth.currentUser);
+          setLoading(false);
+          didSetUserFromRedirect = true;
         }
       } catch (err) {
         if (!cancelled) setRedirectError(err as Error);
       }
       if (cancelled) return;
       unsubRef.current = onAuthStateChanged(auth, (firebaseUser) => {
-        setUser(firebaseUser);
-        setLoading(false);
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          setLoading(false);
+        } else {
+          if (didSetUserFromRedirect) {
+            didSetUserFromRedirect = false;
+            return;
+          }
+          setUser(null);
+          setLoading(false);
+        }
       });
     })();
 
