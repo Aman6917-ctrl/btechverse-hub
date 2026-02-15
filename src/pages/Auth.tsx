@@ -191,25 +191,22 @@ export default function Auth() {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
+    toast({ title: "Redirecting to Google…", description: "Aapko Google sign-in page par bheja ja raha hai." });
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        const code = (error as { code?: string }).code;
-        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
         toast({
           variant: "destructive",
           title: "Google sign-in failed",
           description: error.message,
         });
-      } else {
-        toast({ title: "Welcome! 🎉", description: "Signed in with Google." });
-        // onAuthStateChanged will set user; effect will call goAfterLogin()
       }
+      // With redirect flow the page navigates to Google; we only get here if redirect failed
     } catch (err) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: (err as Error).message || "Something went wrong. Please try again.",
       });
     } finally {
       setGoogleLoading(false);

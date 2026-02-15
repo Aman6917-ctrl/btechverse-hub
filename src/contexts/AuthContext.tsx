@@ -4,7 +4,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   setPersistence,
@@ -46,12 +47,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getFirebaseAuth();
 
   useEffect(() => {
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+
     setPersistence(auth, browserLocalPersistence).catch(() => {});
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+
+    // After Google redirect we must run getRedirectResult() first to apply the sign-in, then listen
+    getRedirectResult(auth)
+      .then((result) => {
+        if (cancelled) return;
+        if (result?.user) {
+          setRedirectError(null);
+          setUser(result.user);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setRedirectError(err as Error);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+          setUser(firebaseUser);
+          setLoading(false);
+        });
+      });
+
+    return () => {
+      cancelled = true;
+      if (unsubscribe) unsubscribe();
+    };
   }, [auth]);
 
   const signUp = async (email: string, password: string) => {
@@ -75,13 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
       return { error: null };
     } catch (err) {
-      const code = (err as { code?: string })?.code;
-      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-        setRedirectError(err as Error);
-      }
+      setRedirectError(err as Error);
       return { error: err as Error };
     }
   };
