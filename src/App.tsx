@@ -55,8 +55,7 @@ function RedirectFromAuthWhenLoggedIn() {
   const { pathname } = useLocation();
   useLayoutEffect(() => {
     if (loading || !user || pathname !== "/auth") return;
-    const t = setTimeout(() => window.location.replace("/"), 50);
-    return () => clearTimeout(t);
+    window.location.replace("/");
   }, [user, loading, pathname]);
   return null;
 }

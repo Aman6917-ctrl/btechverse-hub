@@ -47,25 +47,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getFirebaseAuth();
 
   useEffect(() => {
+    let cancelled = false;
+    const unsubRef = { current: null as (() => void) | null };
+
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    // Listener first so when getRedirectResult() applies sign-in, we get the user immediately
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
-    });
-
-    getRedirectResult(auth)
-      .then((result) => {
+    (async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (cancelled) return;
         if (result?.user) {
           setRedirectError(null);
           setUser(result.user);
           setLoading(false);
         }
-      })
-      .catch((err) => setRedirectError(err as Error));
+      } catch (err) {
+        if (!cancelled) setRedirectError(err as Error);
+      }
+      if (cancelled) return;
+      unsubRef.current = onAuthStateChanged(auth, (firebaseUser) => {
+        setUser(firebaseUser);
+        setLoading(false);
+      });
+    })();
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      if (unsubRef.current) unsubRef.current();
+    };
   }, [auth]);
 
   const signUp = async (email: string, password: string) => {

@@ -330,6 +330,7 @@ export default function Auth() {
                   <Input
                     id="email"
                     type="email"
+                    autoComplete="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => {
@@ -352,6 +353,7 @@ export default function Auth() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => {
