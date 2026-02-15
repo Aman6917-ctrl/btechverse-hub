@@ -79,19 +79,22 @@ export default function Auth() {
     hasRedirected.current = true;
     let target = path ?? redirectTo ?? "/";
     if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    const fullUrl = target.startsWith("http")
-      ? target
-      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
-    // Full page redirect so we always leave /auth after Google return (avoids same-page stuck)
-    setTimeout(() => window.location.replace(fullUrl), 100);
+    if (target.startsWith("http")) {
+      window.location.replace(target);
+      return;
+    }
+    const pathname = target.startsWith("/") ? target : `/${target}`;
+    navigate(pathname, { replace: true });
+    requestAnimationFrame(scrollToTop);
+    setTimeout(scrollToTop, 0);
   };
 
-  // When user is logged in on this page, redirect to home/target
+  // Redirect when already logged in (e.g. after popup sign-in or page refresh)
   useEffect(() => {
     if (!loading && user) {
       goAfterLogin();
     }
-  }, [user, loading, redirectTo]);
+  }, [user, loading, redirectTo, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -330,7 +333,6 @@ export default function Auth() {
                   <Input
                     id="email"
                     type="email"
-                    autoComplete="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => {
@@ -353,7 +355,6 @@ export default function Auth() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete={isLogin ? "current-password" : "new-password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => {

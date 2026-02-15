@@ -48,49 +48,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    const unsubRef = { current: null as (() => void) | null };
-    let didSetUserFromRedirect = false;
+    let unsubscribe: (() => void) | null = null;
 
     setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-    (async () => {
-      try {
-        const result = await getRedirectResult(auth);
+    // After Google redirect we must run getRedirectResult() first to apply the sign-in, then listen
+    getRedirectResult(auth)
+      .then((result) => {
         if (cancelled) return;
         if (result?.user) {
           setRedirectError(null);
           setUser(result.user);
           setLoading(false);
-          didSetUserFromRedirect = true;
-        } else if (auth.currentUser) {
-          // Redirect was already consumed (e.g. React Strict Mode ran effect twice)
-          setRedirectError(null);
-          setUser(auth.currentUser);
-          setLoading(false);
-          didSetUserFromRedirect = true;
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!cancelled) setRedirectError(err as Error);
-      }
-      if (cancelled) return;
-      unsubRef.current = onAuthStateChanged(auth, (firebaseUser) => {
-        if (firebaseUser) {
+      })
+      .finally(() => {
+        if (cancelled) return;
+        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
           setUser(firebaseUser);
           setLoading(false);
-        } else {
-          if (didSetUserFromRedirect) {
-            didSetUserFromRedirect = false;
-            return;
-          }
-          setUser(null);
-          setLoading(false);
-        }
+        });
       });
-    })();
 
     return () => {
       cancelled = true;
-      if (unsubRef.current) unsubRef.current();
+      if (unsubscribe) unsubscribe();
     };
   }, [auth]);
 

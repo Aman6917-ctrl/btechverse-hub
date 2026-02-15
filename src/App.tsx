@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -49,17 +49,6 @@ function ScrollToTopOnMentors() {
   return null;
 }
 
-/** When user is logged in and still on /auth (e.g. after Google redirect), force redirect to home */
-function RedirectFromAuthWhenLoggedIn() {
-  const { user, loading } = useAuth();
-  const { pathname } = useLocation();
-  useLayoutEffect(() => {
-    if (loading || !user || pathname !== "/auth") return;
-    window.location.replace("/");
-  }, [user, loading, pathname]);
-  return null;
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -73,7 +62,6 @@ const App = () => (
           }}
         >
           <DisableScrollRestoration />
-          <RedirectFromAuthWhenLoggedIn />
           <ScrollToTopOnMentors />
           <Routes>
             <Route path="/" element={<Index />} />
