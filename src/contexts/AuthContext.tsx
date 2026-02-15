@@ -4,7 +4,6 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
@@ -89,24 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const provider = new GoogleAuthProvider();
+      await signInWithRedirect(auth, provider);
       return { error: null };
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code;
-      if (code === "auth/popup-blocked") {
-        try {
-          await signInWithRedirect(auth, provider);
-          return { error: null };
-        } catch (redirectErr) {
-          setRedirectError(redirectErr as Error);
-          return { error: redirectErr as Error };
-        }
-      }
-      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-        setRedirectError(err as Error);
-      }
+    } catch (err) {
+      setRedirectError(err as Error);
       return { error: err as Error };
     }
   };

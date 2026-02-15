@@ -74,24 +74,38 @@ export default function Auth() {
     document.body.scrollTop = 0;
   };
 
+  const getRedirectUrl = (path?: string) => {
+    let target = path ?? redirectTo ?? "/";
+    if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
+    return target.startsWith("http")
+      ? target
+      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
+  };
+
   const goAfterLogin = (path?: string) => {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
-    let target = path ?? redirectTo ?? "/";
-    if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    const fullUrl = target.startsWith("http")
-      ? target
-      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
-    // Full page redirect so we definitely leave /auth (React Router navigate was leaving on same page)
+    const fullUrl = getRedirectUrl(path);
     window.location.replace(fullUrl);
   };
 
-  // Redirect when already logged in (e.g. after popup sign-in or page refresh)
+  // When user is logged in on auth page: delay so Firebase can persist, then redirect. Backup redirect if still here.
   useEffect(() => {
-    if (!loading && user) {
-      goAfterLogin();
-    }
-  }, [user, loading, redirectTo, navigate]);
+    if (loading || !user) return;
+
+    toast({ title: "Login successful! 🎉", description: "Redirecting you…" });
+
+    const url = getRedirectUrl();
+    const t1 = setTimeout(() => goAfterLogin(), 400);
+    const t2 = setTimeout(() => {
+      if (window.location.pathname === "/auth") window.location.replace(url);
+    }, 1200);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [user, loading, redirectTo, toast]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -188,23 +202,17 @@ export default function Auth() {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
+    toast({ title: "Redirecting to Google…", description: "Sign in wale page par ja rahe hain." });
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        const code = (error as { code?: string }).code;
-        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-          // User closed popup – no toast
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Google sign-in failed",
-            description: error.message,
-          });
-        }
-      } else {
-        toast({ title: "Welcome! 🎉", description: "Signed in with Google." });
-        // onAuthStateChanged sets user; effect will call goAfterLogin()
+        toast({
+          variant: "destructive",
+          title: "Google sign-in failed",
+          description: error.message,
+        });
       }
+      // With redirect, page navigates to Google; we only get here if redirect failed
     } catch (err) {
       toast({
         variant: "destructive",
