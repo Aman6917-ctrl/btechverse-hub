@@ -4,7 +4,6 @@ import { Menu, X, ArrowRight, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import logoImage from "@/assets/logo.png";
 
 const navLinks = [
   { name: "Resources", href: "/#branches" },
@@ -52,7 +51,7 @@ export function Navbar() {
       >
         {/* Logo - Left */}
         <Link to="/" className="flex items-center gap-2 pl-2 flex-shrink-0 min-w-0">
-          <img src={logoImage} alt="Btechverse" className="h-8 w-auto" />
+          <img src="/favicon.svg" alt="Btechverse" className="h-8 w-8 flex-shrink-0" />
           <span className="text-[1rem] font-bold hidden sm:inline leading-8">
             Btech<span className="text-primary">verse</span>
           </span>
