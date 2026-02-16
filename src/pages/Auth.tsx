@@ -89,23 +89,26 @@ export default function Auth() {
     window.location.replace(fullUrl);
   };
 
-  // When user is logged in on auth page: delay so Firebase can persist, then redirect. Backup redirect if still here.
+  // When user is logged in on auth page: redirect immediately + backup so we never stay on /auth
   useEffect(() => {
     if (loading || !user) return;
 
+    const url = getRedirectUrl();
     toast({ title: "Login successful! 🎉", description: "Redirecting you…" });
 
-    const url = getRedirectUrl();
-    const t1 = setTimeout(() => goAfterLogin(), 400);
+    // Redirect on next tick so Firebase has a moment to persist; don't cancel this
+    const t1 = setTimeout(() => goAfterLogin(), 100);
     const t2 = setTimeout(() => {
-      if (window.location.pathname === "/auth") window.location.replace(url);
-    }, 1200);
+      if (typeof window !== "undefined" && window.location.pathname === "/auth") {
+        window.location.replace(url);
+      }
+    }, 1500);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [user, loading, redirectTo, toast]);
+  }, [user, loading, redirectTo]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
