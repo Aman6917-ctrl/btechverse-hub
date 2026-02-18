@@ -82,12 +82,16 @@ export default function Auth() {
       : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
   };
 
-  const goAfterLogin = (path?: string) => {
-    const fullUrl = getRedirectUrl(path);
-    window.location.replace(fullUrl);
+  const doRedirect = (path?: string) => {
+    const url = getRedirectUrl(path);
+    try {
+      window.location.href = url;
+    } catch {
+      window.location.replace(url);
+    }
   };
 
-  // When user is logged in: redirect once, then retry every 600ms until we leave /auth (permanent fix)
+  // When user is logged in: redirect and retry every 300ms until we leave /auth or /auth/callback
   useEffect(() => {
     if (loading || !user) return;
     if (hasRedirected.current) return;
@@ -95,15 +99,15 @@ export default function Auth() {
 
     const url = getRedirectUrl();
     toast({ title: "Login successful! 🎉", description: "Redirecting you…" });
-    window.location.replace(url);
+    doRedirect();
 
     const interval = setInterval(() => {
-      if (typeof window !== "undefined" && window.location.pathname === "/auth") {
-        window.location.replace(url);
+      if (typeof window !== "undefined" && (window.location.pathname === "/auth" || window.location.pathname === "/auth/callback")) {
+        window.location.href = url;
       } else {
         clearInterval(interval);
       }
-    }, 600);
+    }, 300);
 
     return () => clearInterval(interval);
   }, [user, loading, redirectTo]);

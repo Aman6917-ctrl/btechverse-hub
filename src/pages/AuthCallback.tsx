@@ -24,12 +24,31 @@ export default function AuthCallback() {
     }
   }, [searchParams, signInWithGoogle]);
 
+  // As soon as we have user, redirect to home – and keep retrying until we actually leave
   useEffect(() => {
     if (loading || !user) return;
     let target = searchParams.get("redirect") || "/";
     if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
     const url = target.startsWith("http") ? target : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
-    window.location.replace(url);
+
+    const doRedirect = () => {
+      try {
+        window.location.href = url;
+      } catch {
+        window.location.replace(url);
+      }
+    };
+
+    doRedirect();
+    const interval = setInterval(() => {
+      if (typeof window !== "undefined" && (window.location.pathname === "/auth" || window.location.pathname === "/auth/callback")) {
+        doRedirect();
+      } else {
+        clearInterval(interval);
+      }
+    }, 300);
+
+    return () => clearInterval(interval);
   }, [user, loading, searchParams]);
 
   return (
