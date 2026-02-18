@@ -83,31 +83,29 @@ export default function Auth() {
   };
 
   const goAfterLogin = (path?: string) => {
-    if (hasRedirected.current) return;
-    hasRedirected.current = true;
     const fullUrl = getRedirectUrl(path);
     window.location.replace(fullUrl);
   };
 
-  // When user is logged in on auth page: redirect immediately + backup so we never stay on /auth
+  // When user is logged in: redirect once, then retry every 600ms until we leave /auth (permanent fix)
   useEffect(() => {
     if (loading || !user) return;
+    if (hasRedirected.current) return;
+    hasRedirected.current = true;
 
     const url = getRedirectUrl();
     toast({ title: "Login successful! 🎉", description: "Redirecting you…" });
+    window.location.replace(url);
 
-    // Redirect on next tick so Firebase has a moment to persist; don't cancel this
-    const t1 = setTimeout(() => goAfterLogin(), 100);
-    const t2 = setTimeout(() => {
+    const interval = setInterval(() => {
       if (typeof window !== "undefined" && window.location.pathname === "/auth") {
         window.location.replace(url);
+      } else {
+        clearInterval(interval);
       }
-    }, 1500);
+    }, 600);
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    return () => clearInterval(interval);
   }, [user, loading, redirectTo]);
 
   const validateForm = () => {
