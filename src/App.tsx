@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import BranchMaterials from "./pages/BranchMaterials";
 import Mentors from "./pages/Mentors";
 import NoteViewPage from "./pages/NoteViewPage";
@@ -66,6 +67,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/branch/:code" element={<ProtectedRoute><BranchMaterials /></ProtectedRoute>} />
             <Route path="/mentors" element={<ProtectedRoute><Mentors /></ProtectedRoute>} />
             <Route path="/view" element={<ProtectedRoute><NoteViewPage /></ProtectedRoute>} />

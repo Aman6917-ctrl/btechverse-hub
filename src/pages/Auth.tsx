@@ -201,28 +201,11 @@ export default function Auth() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setGoogleLoading(true);
-    toast({ title: "Redirecting to Google…", description: "Sign in wale page par ja rahe hain." });
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Google sign-in failed",
-          description: error.message,
-        });
-      }
-      // With redirect, page navigates to Google; we only get here if redirect failed
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: (err as Error).message || "Something went wrong. Please try again.",
-      });
-    } finally {
-      setGoogleLoading(false);
-    }
+    const params = new URLSearchParams({ mode: "google" });
+    if (redirectTo && redirectTo !== "/") params.set("redirect", redirectTo);
+    window.location.href = `/auth/callback?${params.toString()}`;
   };
 
   if (loading) {
