@@ -4,8 +4,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   setPersistence,
@@ -47,36 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getFirebaseAuth();
 
   useEffect(() => {
-    let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
-
     setPersistence(auth, browserLocalPersistence).catch(() => {});
-
-    // Run getRedirectResult FIRST so when user returns from Google we apply sign-in before listener runs
-    getRedirectResult(auth)
-      .then((result) => {
-        if (cancelled) return;
-        if (result?.user) {
-          setRedirectError(null);
-          setUser(result.user);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setRedirectError(err as Error);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          setUser(firebaseUser);
-          setLoading(false);
-        });
-      });
-
-    return () => {
-      cancelled = true;
-      if (unsubscribe) unsubscribe();
-    };
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, [auth]);
 
   const signUp = async (email: string, password: string) => {
@@ -100,10 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
       return { error: null };
     } catch (err) {
-      setRedirectError(err as Error);
+      const code = (err as { code?: string })?.code;
+      if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
+        setRedirectError(err as Error);
+      }
       return { error: err as Error };
     }
   };

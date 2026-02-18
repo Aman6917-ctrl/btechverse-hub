@@ -205,11 +205,28 @@ export default function Auth() {
     }
   };
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    const params = new URLSearchParams({ mode: "google" });
-    if (redirectTo && redirectTo !== "/") params.set("redirect", redirectTo);
-    window.location.href = `/auth/callback?${params.toString()}`;
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Google sign-in failed",
+          description: error.message,
+        });
+      } else {
+        toast({ title: "Welcome! 🎉", description: "Signed in with Google." });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: (err as Error).message || "Try again.",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   if (loading) {
