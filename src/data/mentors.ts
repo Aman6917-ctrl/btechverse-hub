@@ -58,7 +58,7 @@ export const mentors: Mentor[] = [
     role: "Software Engineer @ Zoomcar",
     expertise: ["Backend Development", "Java & Spring Boot", "REST APIs", "AWS", "Databases & SQL", "DSA"],
     experience: "5+ years",
-    image: "https://media.licdn.com/dms/image/v2/D5603AQHlUTa-uMLoXQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1718304014554?e=1772064000&v=beta&t=xy2-f-g_ZLfpOt83Q6Z6PvJvSpmE_BTgdfjLJBa4NtI",
+    image: "https://media.licdn.com/dms/image/v2/D5622AQG-VeKqi5nMfA/feedshare-shrink_1280/B56ZvNOtjRIoAc-/0/1768674748192?e=1773273600&v=beta&t=UVqbmldKDIGF4viFTLPPNQUbHv6k4GhCvqDjRowuPvs",
     available: true,
     price: "Free",
     email: "rohitkagitha@gmail.com",

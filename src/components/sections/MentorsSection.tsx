@@ -7,8 +7,45 @@ import { BookSessionModal } from "@/components/BookSessionModal";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { mentors as allMentors } from "@/data/mentors";
+import type { Mentor } from "@/data/mentors";
 
 const mentors = allMentors.slice(0, 4);
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function MentorAvatar({ mentor }: { mentor: Mentor }) {
+  const [imgError, setImgError] = useState(false);
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      {imgError ? (
+        <div
+          className="w-20 h-20 rounded-full border-2 border-foreground shrink-0 bg-primary/20 flex items-center justify-center text-lg font-bold text-primary"
+          aria-label={mentor.name}
+        >
+          {getInitials(mentor.name)}
+        </div>
+      ) : (
+        <img
+          src={mentor.image}
+          alt={mentor.name}
+          className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
+          onError={() => setImgError(true)}
+        />
+      )}
+      <div>
+        <h3 className="font-bold text-base leading-tight">{mentor.name}</h3>
+        <p className="text-xs text-muted-foreground">{mentor.role}</p>
+      </div>
+    </div>
+  );
+}
 
 export function MentorsSection() {
   const { user } = useAuth();
@@ -70,17 +107,7 @@ export function MentorsSection() {
                 </div>
 
                 {/* Profile */}
-                <div className="flex items-center gap-3 mb-4">
-                  <img
-                    src={mentor.image}
-                    alt={mentor.name}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
-                  />
-                  <div>
-                    <h3 className="font-bold text-base leading-tight">{mentor.name}</h3>
-                    <p className="text-xs text-muted-foreground">{mentor.role}</p>
-                  </div>
-                </div>
+                <MentorAvatar mentor={mentor} />
 
                 {/* Experience */}
                 <div className="flex items-center gap-4 mb-4 text-sm">

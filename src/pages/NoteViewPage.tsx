@@ -17,6 +17,7 @@ export default function NoteViewPage() {
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfIframeLoaded, setPdfIframeLoaded] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([
     {
       type: "bot",
@@ -38,18 +39,32 @@ export default function NoteViewPage() {
     }
     let cancelled = false;
     setPdfError(null);
-    fetch(`${getApiBase()}/api/presign?url=${encodeURIComponent(rawUrl)}`)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    fetch(`${getApiBase()}/api/presign?url=${encodeURIComponent(rawUrl)}`, {
+      signal: controller.signal,
+    })
       .then((res) => res.json().catch(() => ({})))
       .then((data) => {
         if (cancelled) return;
-        if (data.url) setPdfUrl(data.url);
-        else setPdfError(data.error || "Could not load PDF");
+        if (data.url) {
+          setPdfIframeLoaded(false);
+          setPdfUrl(data.url);
+        } else setPdfError(data.error || "Could not load PDF");
       })
-      .catch(() => {
-        if (!cancelled) setPdfError("Failed to load document");
-      });
+      .catch((err) => {
+        if (cancelled) return;
+        if (err?.name === "AbortError") {
+          setPdfError("Document load slow ho raha hai. Retry karein ya Download karke dekhein.");
+        } else {
+          setPdfError("Document load nahi ho paya. Check karein API server chal raha hai (npm run dev).");
+        }
+      })
+      .finally(() => clearTimeout(timeoutId));
     return () => {
       cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
     };
   }, [rawUrl]);
 
@@ -120,16 +135,27 @@ export default function NoteViewPage() {
             <div className="p-4 text-center text-destructive text-sm">{pdfError}</div>
           )}
           {!pdfUrl && !pdfError && (
-            <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm">Document load ho raha hai…</p>
+              <p className="text-xs max-w-[260px] text-center">Agar zyada time lage to page refresh karein ya Back se wapas jaa kar dobara try karein.</p>
             </div>
           )}
           {pdfUrl && (
-            <iframe
-              src={pdfUrl}
-              title={title}
-              className="w-full h-full min-h-0 border-0"
-            />
+            <div className="relative w-full h-full min-h-0">
+              {!pdfIframeLoaded && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/20 z-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">PDF load ho raha hai…</p>
+                </div>
+              )}
+              <iframe
+                src={pdfUrl}
+                title={title}
+                className="w-full h-full min-h-0 border-0"
+                onLoad={() => setPdfIframeLoaded(true)}
+              />
+            </div>
           )}
         </div>
 

@@ -47,11 +47,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setPersistence(auth, browserLocalPersistence).catch(() => {});
+    let nullTimeoutId: ReturnType<typeof setTimeout> | null = null;
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+      if (firebaseUser !== null) {
+        if (nullTimeoutId) clearTimeout(nullTimeoutId);
+        nullTimeoutId = null;
+        setUser(firebaseUser);
+        setLoading(false);
+        return;
+      }
+      // Firebase often fires once with null before restoring persisted session.
+      // Delay treating null as "logged out" so we don't flash the login page.
+      if (nullTimeoutId) clearTimeout(nullTimeoutId);
+      nullTimeoutId = setTimeout(() => {
+        nullTimeoutId = null;
+        setUser(null);
+        setLoading(false);
+      }, 200);
     });
-    return () => unsubscribe();
+    return () => {
+      if (nullTimeoutId) clearTimeout(nullTimeoutId);
+      unsubscribe();
+    };
   }, [auth]);
 
   const signUp = async (email: string, password: string) => {

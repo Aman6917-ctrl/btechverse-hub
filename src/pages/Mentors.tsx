@@ -8,8 +8,18 @@ import { BookSessionModal } from "@/components/BookSessionModal";
 import { mentors } from "@/data/mentors";
 import type { Mentor } from "@/data/mentors";
 
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 function MentorCard({ mentor, index }: { mentor: Mentor; index: number }) {
   const [bookModalOpen, setBookModalOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div
@@ -32,11 +42,21 @@ function MentorCard({ mentor, index }: { mentor: Mentor; index: number }) {
       </div>
 
       <div className="flex items-center gap-3 mb-4">
-        <img
-          src={mentor.image}
-          alt={mentor.name}
-          className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
-        />
+        {imgError ? (
+          <div
+            className="w-20 h-20 rounded-full border-2 border-foreground shrink-0 bg-primary/20 flex items-center justify-center text-lg font-bold text-primary"
+            aria-label={mentor.name}
+          >
+            {getInitials(mentor.name)}
+          </div>
+        ) : (
+          <img
+            src={mentor.image}
+            alt={mentor.name}
+            className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
+            onError={() => setImgError(true)}
+          />
+        )}
         <div>
           <h3 className="font-bold text-base leading-tight">{mentor.name}</h3>
           <p className="text-xs text-muted-foreground">{mentor.role}</p>
