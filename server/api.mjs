@@ -139,6 +139,37 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // GET /api/mentor-image?url=... – proxy image so LinkedIn hotlink block is bypassed
+  if (req.method === "GET" && pathname === "/api/mentor-image") {
+    const imageUrl = query.url;
+    if (!imageUrl || !/^https:\/\/(media\.licdn\.com|[\w.-]+\.licdn\.com)/i.test(imageUrl)) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Invalid url" }));
+      return;
+    }
+    try {
+      const resp = await fetch(imageUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; Btechverse/1.0)" },
+        redirect: "follow",
+      });
+      if (!resp.ok) {
+        res.writeHead(502, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Image fetch failed" }));
+        return;
+      }
+      const contentType = resp.headers.get("content-type") || "image/jpeg";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      const buf = await resp.arrayBuffer();
+      res.writeHead(200);
+      res.end(Buffer.from(buf));
+    } catch (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: String(err?.message || err) }));
+    }
+    return;
+  }
+
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: "Not found" }));
 });

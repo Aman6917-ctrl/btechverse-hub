@@ -8,6 +8,7 @@ import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { mentors as allMentors } from "@/data/mentors";
 import type { Mentor } from "@/data/mentors";
+import { getMentorImageUrl } from "@/lib/mentor-image";
 
 const mentors = allMentors.slice(0, 4);
 
@@ -33,10 +34,9 @@ function MentorAvatar({ mentor }: { mentor: Mentor }) {
         </div>
       ) : (
         <img
-          src={mentor.image}
+          src={getMentorImageUrl(mentor.image)}
           alt={mentor.name}
           className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
-          referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
         />
       )}

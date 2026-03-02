@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BookSessionModal } from "@/components/BookSessionModal";
 import { mentors } from "@/data/mentors";
 import type { Mentor } from "@/data/mentors";
+import { getMentorImageUrl } from "@/lib/mentor-image";
 
 function getInitials(name: string) {
   return name
@@ -51,10 +52,9 @@ function MentorCard({ mentor, index }: { mentor: Mentor; index: number }) {
           </div>
         ) : (
           <img
-            src={mentor.image}
+            src={getMentorImageUrl(mentor.image)}
             alt={mentor.name}
             className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
-            referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
           />
         )}
