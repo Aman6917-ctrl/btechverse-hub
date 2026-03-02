@@ -9,19 +9,21 @@ type ChatMsg = { type: "user" | "bot"; message: string };
 const NOTE_CONTEXT_SYSTEM =
   "You are an in-app study assistant. The user is viewing a PDF note right now. Help them understand it, summarize parts, or answer questions about the content. Keep answers concise and in simple language (Hinglish ok).";
 
+const PENDING_KEY_PREFIX = "noteView_";
+
 export default function NoteViewPage() {
   const [searchParams] = useSearchParams();
+  const pendingToken = searchParams.get("pending") || "";
   const rawUrl = searchParams.get("url") || "";
-  const title = searchParams.get("title") || "Note";
-  const subject = searchParams.get("subject") || "";
-
+  const [viewTitle, setViewTitle] = useState(() => searchParams.get("title") || "Note");
+  const [viewSubject, setViewSubject] = useState(() => searchParams.get("subject") || "");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfIframeLoaded, setPdfIframeLoaded] = useState(false);
-  const [messages, setMessages] = useState<ChatMsg[]>([
+  const [messages, setMessages] = useState<ChatMsg[]>(() => [
     {
       type: "bot",
-      message: `Ye note ke saath tumhara AI assistant. "${title}"${subject ? ` (${subject})` : ""} — kuch bhi puch sakte ho.`,
+      message: `Ye note ke saath tumhara AI assistant. "${searchParams.get("title") || "Note"}"${searchParams.get("subject") ? ` (${searchParams.get("subject")})` : ""} — kuch bhi puch sakte ho.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -29,10 +31,38 @@ export default function NoteViewPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!pendingToken || typeof localStorage === "undefined") return;
+    try {
+      const key = `${PENDING_KEY_PREFIX}${pendingToken}`;
+      const raw = localStorage.getItem(key);
+      localStorage.removeItem(key);
+      if (!raw) {
+        setPdfError("Session expired. Wapas jaa kar View dobara dabayein.");
+        return;
+      }
+      const data = JSON.parse(raw) as { url?: string; title?: string; subject?: string };
+      if (data.url) {
+        setPdfUrl(data.url);
+        setViewTitle(data.title ?? "Note");
+        setViewSubject(data.subject ?? "");
+        setMessages([
+          { type: "bot", message: `Ye note ke saath tumhara AI assistant. "${data.title ?? "Note"}"${data.subject ? ` (${data.subject})` : ""} — kuch bhi puch sakte ho.` },
+        ]);
+      } else {
+        setPdfError("Invalid session. Wapas jaa kar View dobara dabayein.");
+      }
+    } catch {
+      setPdfError("Invalid session. Wapas jaa kar View dobara dabayein.");
+    }
+  }, [pendingToken]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
+    if (pdfUrl !== null) return;
+    if (pendingToken) return;
     if (!rawUrl) {
       setPdfError("No document URL");
       return;
@@ -66,7 +96,7 @@ export default function NoteViewPage() {
       controller.abort();
       clearTimeout(timeoutId);
     };
-  }, [rawUrl]);
+  }, [rawUrl, pendingToken, pdfUrl]);
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -123,8 +153,8 @@ export default function NoteViewPage() {
             Back
           </Link>
         </Button>
-        <span className="text-sm font-medium truncate flex-1" title={title}>
-          {title}
+        <span className="text-sm font-medium truncate flex-1" title={viewTitle}>
+          {viewTitle}
         </span>
       </header>
 
@@ -151,7 +181,7 @@ export default function NoteViewPage() {
               )}
               <iframe
                 src={pdfUrl}
-                title={title}
+                title={viewTitle}
                 className="w-full h-full min-h-0 border-0"
                 onLoad={() => setPdfIframeLoaded(true)}
               />

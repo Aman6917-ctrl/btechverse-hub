@@ -36,6 +36,7 @@ function MentorAvatar({ mentor }: { mentor: Mentor }) {
           src={mentor.image}
           alt={mentor.name}
           className="w-20 h-20 rounded-full object-cover border-2 border-foreground shrink-0"
+          referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
         />
       )}

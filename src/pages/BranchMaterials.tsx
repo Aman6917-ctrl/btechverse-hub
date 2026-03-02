@@ -51,15 +51,42 @@ function MaterialCard({
   icon: React.ElementType;
 }) {
   const [loading, setLoading] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
   const { toast } = useToast();
 
-  const openViewPage = () => {
-    const params = new URLSearchParams({
-      url: item.url,
-      title: item.name,
-      subject: item.subject || "",
-    });
-    window.open(`/view?${params.toString()}`, "_blank", "noopener,noreferrer");
+  const openViewPage = async () => {
+    if (viewLoading) return;
+    setViewLoading(true);
+    try {
+      const res = await fetch(`${getApiBase()}/api/presign?url=${encodeURIComponent(item.url)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        if (isLikelyS3(item.url)) {
+          toast({
+            title: "Cannot open note",
+            description: data.error || "API not running. Try npm run dev.",
+            variant: "destructive",
+          });
+        } else {
+          toast({ title: "Error", description: data.error || "Could not open", variant: "destructive" });
+        }
+        return;
+      }
+      const token = `n${Date.now()}`;
+      localStorage.setItem(
+        `noteView_${token}`,
+        JSON.stringify({ url: data.url, title: item.name, subject: item.subject || "" })
+      );
+      window.open(`/view?pending=${token}`, "_blank", "noopener,noreferrer");
+    } catch {
+      toast({
+        title: "Cannot open note",
+        description: "Network error. Try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   const handleDownload = async (e: React.MouseEvent) => {
@@ -151,9 +178,10 @@ function MaterialCard({
           size="icon"
           className="shrink-0 h-9 w-9"
           onClick={openViewPage}
-          title="View with AI assistant"
+          disabled={viewLoading}
+          title={viewLoading ? "Opening…" : "View with AI assistant"}
         >
-          <Eye className="h-4 w-4" />
+          {viewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
         </Button>
       </div>
     </div>
