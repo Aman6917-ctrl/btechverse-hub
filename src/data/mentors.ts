@@ -1,6 +1,7 @@
 /**
  * Mentors list – yahan mentors ki details add/update karo.
  * Homepage pe sirf pehle 4 dikhte hain; full list /mentors page pe.
+ * For guaranteed visible photos on live site: add images in public/mentors/ (e.g. suraj.jpg) and set image: "/mentors/suraj.jpg".
  */
 export type Mentor = {
   name: string;
