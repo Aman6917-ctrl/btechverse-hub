@@ -26,7 +26,7 @@ export const mentors: Mentor[] = [
     role: "SDE-2 @ Innovapptive",
     expertise: ["Backend Development", "System Design", "SaaS Products", "REST APIs", "DSA", "Career Guidance"],
     experience: "4 years",
-    image: "https://media.licdn.com/dms/image/v2/D5603AQGxd2TxDgtl2g/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1699222992853?e=1772064000&v=beta&t=ieRwNn-BNZTWyNatkHQB-JWo8OAe_UwZdNP_jwazuhM",
+    image: "/mentors/suraj-verma.png",
     available: true,
     price: "Free",
     email: "surajverma0347@gmail.com",
