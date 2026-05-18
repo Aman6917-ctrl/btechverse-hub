@@ -71,7 +71,7 @@ export default function SqlPracticePage() {
         setResult({ columns: ["OK"], rows: [["Done"]] });
       }
     } catch (e) {
-      if (db) try { db.close(); } catch (_) {}
+      if (db) try { db.close(); } catch { /* ignore */ }
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
       setResult(null);

@@ -27,7 +27,7 @@ const Index = () => {
   }, [location.pathname, location.hash]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       <main>
         <HeroSection />

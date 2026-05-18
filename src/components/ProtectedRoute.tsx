@@ -1,5 +1,6 @@
 import { useLayoutEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 function ScrollToTopWhenReady() {
@@ -21,8 +22,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+        <div className="relative flex h-11 w-11 items-center justify-center">
+          <span className="absolute inset-0 rounded-full border-2 border-primary/15" aria-hidden />
+          <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" aria-hidden />
+          <Loader2 className="h-5 w-5 text-primary/90" aria-hidden />
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }

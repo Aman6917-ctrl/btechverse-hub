@@ -1,62 +1,41 @@
-import { useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-/**
- * Dedicated page for Google sign-in redirect.
- * 1. User clicks "Continue with Google" on /auth → we send them here (/auth/callback?mode=google)
- * 2. This page loads and calls signInWithRedirect → browser goes to Google
- * 3. User returns to /auth/callback#... → getRedirectResult (in AuthProvider) sets user → we redirect to /
- */
+/** Legacy / bookmarked callback URL — send users to /auth or their redirect target. */
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
-  const { user, loading, signInWithGoogle } = useAuth();
-  const started = useRef(false);
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const mode = searchParams.get("mode");
-    const hasHash = typeof window !== "undefined" && window.location.hash.length > 1;
+    if (loading) return;
 
-    if (mode === "google" && !hasHash && !started.current) {
-      started.current = true;
-      signInWithGoogle();
-    }
-  }, [searchParams, signInWithGoogle]);
-
-  // As soon as we have user, redirect to home – and keep retrying until we actually leave
-  useEffect(() => {
-    if (loading || !user) return;
-    let target = searchParams.get("redirect") || "/";
-    if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    const url = target.startsWith("http") ? target : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
-
-    const doRedirect = () => {
+    const raw = searchParams.get("redirect");
+    let target = "/";
+    if (raw) {
       try {
-        window.location.href = url;
+        target = decodeURIComponent(raw);
       } catch {
-        window.location.replace(url);
+        target = raw;
       }
-    };
+    }
+    if (!target.startsWith("/") || target === "/auth" || target.startsWith("/auth?")) {
+      target = "/";
+    }
 
-    doRedirect();
-    const interval = setInterval(() => {
-      if (typeof window !== "undefined" && (window.location.pathname === "/auth" || window.location.pathname === "/auth/callback")) {
-        doRedirect();
-      } else {
-        clearInterval(interval);
-      }
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, [user, loading, searchParams]);
+    if (user) {
+      navigate(target, { replace: true });
+    } else {
+      navigate(`/auth?redirect=${encodeURIComponent(target)}`, { replace: true });
+    }
+  }, [user, loading, navigate, searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 px-4">
       <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-      <p className="text-muted-foreground font-medium">
-        {loading ? "Completing sign-in…" : "Redirecting you…"}
-      </p>
+      <p className="text-muted-foreground font-medium">Redirecting…</p>
     </div>
   );
 }

@@ -28,7 +28,22 @@ export function StatsSection() {
   return (
     <section className="pt-4 pb-16 border-y border-border bg-muted/30">
       <div className="container">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <motion.div
+          className="max-w-2xl mx-auto text-center mb-8"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.45 }}
+        >
+          <span className="sticker-green-soft mb-3 inline-block">Why Btechverse</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground text-balance">
+            Built for real semester pressure
+          </h2>
+          <p className="mt-2 text-muted-foreground text-sm md:text-base max-w-lg mx-auto">
+            Notes, mentors, and an AI study buddy—so you spend less time hunting and more time learning.
+          </p>
+        </motion.div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
@@ -39,7 +54,7 @@ export function StatsSection() {
               className="group"
               style={{ transform: `rotate(${index % 2 === 0 ? -0.8 : 0.6}deg)` }}
             >
-              <div className="paper-card p-5 h-full group-hover:shadow-lg group-hover:shadow-foreground/10 transition-shadow duration-300">
+              <div className="paper-card p-5 h-full rounded-xl group-hover:shadow-lg group-hover:shadow-foreground/10 transition-shadow duration-300">
                 <div className="p-2.5 w-fit rounded-lg bg-muted/80 border-2 border-foreground mb-4 group-hover:border-primary/60 transition-colors">
                   <feature.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>

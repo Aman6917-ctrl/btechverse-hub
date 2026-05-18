@@ -47,6 +47,19 @@ function devApiPlugin() {
               try {
                 const { getUploadPresignedUrl } = await import("./server/presign.mjs");
                 const data = JSON.parse(body);
+                const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "amanvverma109@gmail.com")
+                  .split(",")
+                  .map((e: string) => e.trim().toLowerCase())
+                  .filter(Boolean);
+                const adminEmail = String(data.adminEmail || "").trim().toLowerCase();
+                if (!adminEmail || !adminEmails.includes(adminEmail)) {
+                  if (!res.headersSent) {
+                    res.statusCode = 403;
+                    res.setHeader("Content-Type", "application/json");
+                    res.end(JSON.stringify({ error: "Admin only" }));
+                  }
+                  return;
+                }
                 const { uploadUrl, fileUrl } = await getUploadPresignedUrl({
                   branchCode: data.branchCode,
                   category: data.category,
@@ -114,6 +127,47 @@ function devApiPlugin() {
               }
             })();
           });
+          return;
+        }
+
+        // GET /api/mentor-image?url=... – LinkedIn proxy (same as server/api.mjs)
+        if (req.method === "GET" && (pathname === "/api/mentor-image" || pathname.startsWith("/api/mentor-image?"))) {
+          const imageUrl = new URL(req.url || "", "http://localhost").searchParams.get("url");
+          if (!imageUrl || !/^https:\/\/(media\.licdn\.com|[\w.-]+\.licdn\.com)/i.test(imageUrl)) {
+            res.statusCode = 400;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: "Invalid url" }));
+            return;
+          }
+          (async () => {
+            try {
+              const resp = await fetch(imageUrl, {
+                redirect: "follow",
+                headers: {
+                  "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                  Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                  Referer: "https://www.linkedin.com/",
+                },
+              });
+              if (!resp.ok) {
+                res.statusCode = 502;
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({ error: "Image fetch failed" }));
+                return;
+              }
+              const contentType = resp.headers.get("content-type") || "image/jpeg";
+              res.statusCode = 200;
+              res.setHeader("Content-Type", contentType);
+              res.setHeader("Cache-Control", "public, max-age=86400");
+              const buf = Buffer.from(await resp.arrayBuffer());
+              res.end(buf);
+            } catch (e) {
+              res.statusCode = 500;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: String(e?.message || e) }));
+            }
+          })();
           return;
         }
 

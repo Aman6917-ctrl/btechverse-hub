@@ -10,6 +10,7 @@ const navLinks = [
   { name: "Resources", href: "/#branches" },
   { name: "Interview Prep", href: "/interview-prep" },
   { name: "Mentors", href: "/mentors" },
+  { name: "Study Room", href: "/study" },
   { name: "AI Assistant", href: "/#ai-assistant" },
   { name: "About", href: "/#about" },
 ];
@@ -62,7 +63,11 @@ export function Navbar() {
         {/* Desktop Navigation - Center */}
         <div className="hidden md:flex items-center gap-1 px-2 min-w-0 flex-1 justify-center">
           {[...navLinks, ...(isAdmin ? [{ name: "Upload", href: "/upload" }] : [])].map((link) => {
-            const isPageLink = link.href === "/mentors" || link.href === "/interview-prep" || link.href === "/upload";
+            const isPageLink =
+              link.href === "/mentors" ||
+              link.href === "/interview-prep" ||
+              link.href === "/upload" ||
+              link.href === "/study";
             const isHashLink = link.href.startsWith("/#");
             const linkClass = "px-3 py-1.5 text-sm text-muted-foreground hover:text-primary link-underline transition-all duration-200 whitespace-nowrap";
             if (isPageLink) {
@@ -153,7 +158,11 @@ export function Navbar() {
             <div className="bg-background/95 backdrop-blur-md rounded-2xl shadow-lg shadow-foreground/5 border border-border/50 p-4 max-w-4xl mx-auto">
               <div className="flex flex-col gap-1">
                 {[...navLinks, ...(isAdmin ? [{ name: "Upload", href: "/upload" }] : [])].map((link) => {
-                  const isPageLink = link.href === "/mentors" || link.href === "/interview-prep" || link.href === "/upload";
+                  const isPageLink =
+              link.href === "/mentors" ||
+              link.href === "/interview-prep" ||
+              link.href === "/upload" ||
+              link.href === "/study";
                   const isHashLink = link.href.startsWith("/#");
                   const linkClass = "px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-colors whitespace-nowrap";
                   if (isPageLink) {

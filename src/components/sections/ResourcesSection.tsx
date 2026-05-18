@@ -51,6 +51,7 @@ const resources = [
 export function ResourcesSection() {
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginRedirect, setLoginRedirect] = useState("/#resources");
 
   return (
     <section id="resources" className="section-padding pb-12 md:pb-16 lg:pb-20 relative overflow-hidden">
@@ -88,6 +89,7 @@ export function ResourcesSection() {
               onClick={(e) => {
                 if (resource.available && !user) {
                   e.preventDefault();
+                  setLoginRedirect(resource.link ?? "/#branches");
                   setShowLoginModal(true);
                 }
               }}
@@ -174,7 +176,7 @@ export function ResourcesSection() {
             </Button>
           )}
           <p className="text-sm text-muted-foreground mt-4">
-            Login to browse and download.
+            Sign in to browse and download.
           </p>
         </motion.div>
       </div>
@@ -182,7 +184,7 @@ export function ResourcesSection() {
       <LoginRequiredModal
         open={showLoginModal}
         onOpenChange={setShowLoginModal}
-        redirect="/#resources"
+        redirect={loginRedirect}
       />
     </section>
   );

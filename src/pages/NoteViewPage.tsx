@@ -34,8 +34,8 @@ export default function NoteViewPage() {
     if (!pendingToken || typeof localStorage === "undefined") return;
     try {
       const key = `${PENDING_KEY_PREFIX}${pendingToken}`;
-      const raw = localStorage.getItem(key);
-      localStorage.removeItem(key);
+      let raw = localStorage.getItem(key);
+      if (!raw) raw = sessionStorage.getItem(key);
       if (!raw) {
         setPdfError("Session expired. Wapas jaa kar View dobara dabayein.");
         return;
@@ -55,6 +55,17 @@ export default function NoteViewPage() {
       setPdfError("Invalid session. Wapas jaa kar View dobara dabayein.");
     }
   }, [pendingToken]);
+
+  useEffect(() => {
+    if (!pendingToken || !pdfIframeLoaded || !pdfUrl) return;
+    const key = `${PENDING_KEY_PREFIX}${pendingToken}`;
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }, [pendingToken, pdfIframeLoaded, pdfUrl]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,7 +98,11 @@ export default function NoteViewPage() {
         if (err?.name === "AbortError") {
           setPdfError("Document load slow ho raha hai. Retry karein ya Download karke dekhein.");
         } else {
-          setPdfError("Document load nahi ho paya. Check karein API server chal raha hai (npm run dev).");
+          setPdfError(
+            getApiBase()
+              ? "Document load nahi ho paya. Thodi der baad retry karein."
+              : "Document load nahi ho paya. Local: npm run dev chalao. Live: API server check karo."
+          );
         }
       })
       .finally(() => clearTimeout(timeoutId));

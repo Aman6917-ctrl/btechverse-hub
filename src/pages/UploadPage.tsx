@@ -55,7 +55,7 @@ export default function UploadPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate("/auth", { replace: true });
+      navigate(`/auth?redirect=${encodeURIComponent("/upload")}`, { replace: true });
       return;
     }
     if (!isAdmin) {
@@ -76,7 +76,12 @@ export default function UploadPage() {
     }
     setSubmitting(true);
     try {
-      const uploadResult = await uploadResourceFile(file, branch, category);
+      const uploadResult = await uploadResourceFile(
+        file,
+        branch,
+        category,
+        user?.email?.trim() || ""
+      );
       if ("error" in uploadResult) {
         toast({
           title: "Upload failed",

@@ -62,6 +62,11 @@ export async function getPresignedUrl(rawUrl) {
   const s3Params = parseS3Url(rawUrl);
   if (!s3Params) return { url: rawUrl };
 
+  const S3_BUCKET = process.env.S3_BUCKET || "btech-verse";
+  if (s3Params.bucket !== S3_BUCKET) {
+    throw new Error("URL not allowed");
+  }
+
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
     throw new Error("S3 credentials not configured");
   }

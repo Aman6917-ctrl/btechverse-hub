@@ -79,6 +79,7 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   [id="resources"],
@@ -96,7 +97,7 @@
 
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased overflow-x-hidden;
     font-family: 'Instrument Sans', system-ui, sans-serif;
     background-image: 
       radial-gradient(ellipse 120% 80% at 50% -20%, hsl(var(--primary) / 0.04), transparent),
@@ -222,6 +223,7 @@
   .paper-card {
     @apply bg-card border-2 border-foreground p-6;
     box-shadow: 4px 4px 0 hsl(var(--foreground));
+    transition: box-shadow 0.22s ease, transform 0.22s ease;
   }
 
   .paper-card:hover {
@@ -326,6 +328,24 @@
 
   .marquee:hover {
     animation-play-state: paused;
+  }
+
+  /** Fade logos at edges so the marquee feels inset */
+  .marquee-wrap {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
   }
 
   @keyframes marquee {

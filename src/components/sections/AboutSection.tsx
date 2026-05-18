@@ -2,10 +2,15 @@ import { motion } from "framer-motion";
 import { Quote, Github, Youtube, Linkedin, Heart, Coffee, Moon, Code2 } from "lucide-react";
 import { useStudentCount } from "@/lib/student-count";
 
-const AMAN_PHOTO_URL = "https://media.licdn.com/dms/image/v2/D4E03AQHfPFrETpbONw/profile-displayphoto-crop_800_800/B4EZnObRwLIUAQ-/0/1760104882727?e=1772064000&v=beta&t=blqj0fVixvJKsxDkUyTBiSMUvSWC8mLkV8lZ2o4n51w";
-
 const team = [
-  { name: "Aman Verma", role: "Founder and Developer", emoji: "💻", image: AMAN_PHOTO_URL, college: "RCOEM", funFact: "Built this so you get notes without the struggle and real mentors to guide your future" },
+  {
+    name: "Aman Verma",
+    role: "Founder and Developer",
+    emoji: "💻",
+    image: "/team/aman-verma.png",
+    college: "RCOEM",
+    funFact: "Built this so you get notes without the struggle and real mentors to guide your future",
+  },
 ];
 
 const testimonials = [
@@ -91,9 +96,14 @@ export function AboutSection() {
                     className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-card border-2 border-border rounded-lg hover:border-foreground/30 transition-colors"
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="shrink-0 w-20 h-20 rounded-full overflow-hidden border-2 border-border bg-muted">
+                      <div className="relative shrink-0 w-20 h-20 overflow-hidden rounded-full border-2 border-border bg-muted">
                         {"image" in member && member.image ? (
-                          <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                          <img
+                            src={member.image}
+                            alt={member.name}
+                            className="absolute inset-x-0 -top-[10%] h-[140%] w-full object-cover object-[center_18%]"
+                            loading="lazy"
+                          />
                         ) : (
                           <span className="flex items-center justify-center w-full h-full text-2xl">{member.emoji}</span>
                         )}

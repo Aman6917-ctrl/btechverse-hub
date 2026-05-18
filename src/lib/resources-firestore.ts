@@ -133,7 +133,9 @@ export async function loadBranchResourcesFromFirestore(
       });
     });
 
-    if (docs.length === 0) return null;
+    if (docs.length === 0) {
+      return { handwrittenNotes: [], ppt: [], prevYearPapers: [] };
+    }
 
     // Sort by timestamp descending (newest first), client-side to avoid composite index
     docs.sort((a, b) => {
@@ -150,7 +152,7 @@ export async function loadBranchResourcesFromFirestore(
     return groupByCategory(docs);
   } catch (err) {
     console.error("[Firestore] loadBranchResources error:", err);
-    return null;
+    throw err;
   }
 }
 

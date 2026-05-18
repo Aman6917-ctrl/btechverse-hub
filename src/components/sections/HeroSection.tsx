@@ -44,6 +44,24 @@ export function HeroSection() {
   const studentCount = useStudentCount();
   return (
     <section className="min-h-screen flex flex-col justify-center pt-20 pb-2 relative overflow-hidden">
+      {/* Soft animated gradient mesh */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-24 -left-24 w-[min(70vw,28rem)] h-[min(70vw,28rem)] rounded-full bg-primary/[0.14] blur-3xl"
+          animate={{ x: [0, 28, 0], y: [0, 18, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-1/4 -right-16 w-[min(62vw,26rem)] h-[min(62vw,26rem)] rounded-full bg-accent/[0.11] blur-3xl"
+          animate={{ x: [0, -22, 0], y: [0, 28, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-[10%] left-1/3 w-[min(48vw,18rem)] h-[min(48vw,18rem)] rounded-full bg-primary/[0.09] blur-3xl"
+          animate={{ scale: [1, 1.06, 1], opacity: [0.55, 0.85, 0.55] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-dots opacity-30" />
       
@@ -279,12 +297,12 @@ export function HeroSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-20 mb-0 -mx-6 md:mx-0"
+          className="mt-16 mb-0 -mx-6 md:mx-0"
         >
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-4 px-6 md:px-0 text-center">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3 px-6 md:px-0 text-center">
             Get guidance from top mentors working in leading companies
           </p>
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden marquee-wrap">
             <div className="flex gap-16 items-center marquee">
               {[...companyLogos, ...companyLogos].map((company, i) => (
                 <div

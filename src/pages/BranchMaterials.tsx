@@ -73,10 +73,14 @@ function MaterialCard({
         return;
       }
       const token = `n${Date.now()}`;
-      localStorage.setItem(
-        `noteView_${token}`,
-        JSON.stringify({ url: data.url, title: item.name, subject: item.subject || "" })
-      );
+      const payload = JSON.stringify({ url: data.url, title: item.name, subject: item.subject || "" });
+      const storageKey = `noteView_${token}`;
+      localStorage.setItem(storageKey, payload);
+      try {
+        sessionStorage.setItem(storageKey, payload);
+      } catch {
+        /* private mode */
+      }
       window.open(`/view?pending=${token}`, "_blank", "noopener,noreferrer");
     } catch {
       toast({
@@ -217,14 +221,20 @@ export default function BranchMaterials() {
     loadBranchResourcesFromFirestore(branchCode)
       .then((firestoreData) => {
         if (cancelled) return;
-        if (firestoreData) {
-          setData(firestoreData);
-        } else {
-          setData(EMPTY_MATERIALS);
-        }
+        setData(firestoreData);
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || "Could not load materials");
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : "Could not load materials";
+          const isPermission =
+            typeof msg === "string" &&
+            (msg.includes("permission") || msg.includes("Permission") || msg.includes("insufficient"));
+          setError(
+            isPermission
+              ? "Materials load nahi ho paye — login check karo ya Firestore rules verify karo."
+              : msg || "Could not load materials"
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

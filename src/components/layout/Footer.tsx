@@ -38,7 +38,7 @@ export function Footer() {
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
         >
-          Let’s get you studying smarter.
+          Let&apos;s get you studying smarter.
         </motion.h2>
         <motion.div
           className="flex flex-col sm:flex-row items-center justify-center gap-4"

@@ -18,6 +18,10 @@ import DsaPracticePage from "./pages/DsaPracticePage";
 import SqlPracticePage from "./pages/SqlPracticePage";
 import UploadPage from "./pages/UploadPage";
 import NotFound from "./pages/NotFound";
+import StudyRoomHub from "./pages/StudyRoomHub";
+import StudyRoomSession from "./pages/StudyRoomSession";
+import StudyRoomVoice from "./pages/StudyRoomVoice";
+import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +68,7 @@ const App = () => (
         >
           <DisableScrollRestoration />
           <ScrollToTopOnMentors />
+          <ScrollProgressBar />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
@@ -76,6 +81,9 @@ const App = () => (
             <Route path="/interview-prep/:company/sql/practice/:questionIndex" element={<ProtectedRoute><SqlPracticePage /></ProtectedRoute>} />
             <Route path="/interview-prep/:company/:type" element={<ProtectedRoute><InterviewPrepQuestions /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
+            <Route path="/study" element={<StudyRoomHub />} />
+            <Route path="/study/room/:roomId/voice" element={<ProtectedRoute><StudyRoomVoice /></ProtectedRoute>} />
+            <Route path="/study/room/:roomId" element={<ProtectedRoute><StudyRoomSession /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

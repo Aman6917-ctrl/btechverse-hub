@@ -7,7 +7,8 @@ import { getApiBase } from "@/lib/api-base";
 export async function uploadResourceFile(
   file: File,
   branchCode: string,
-  category: string
+  category: string,
+  adminEmail: string
 ): Promise<{ url: string } | { error: string }> {
   try {
     const base = getApiBase();
@@ -19,6 +20,7 @@ export async function uploadResourceFile(
         category,
         fileName: file.name,
         contentType: file.type || "application/octet-stream",
+        adminEmail,
       }),
     });
     if (!res.ok) {

@@ -207,7 +207,7 @@ function runAndCapture(dir, cmd, args, stdinStr, cleanup, sendResult, sendError)
     const timeout = setTimeout(() => {
       proc.kill("SIGKILL");
       cleanup();
-      sendError(resolve, "Timeout (5s)", []);
+      sendError(resolve, "Timeout (10s)", []);
     }, RUN_TIMEOUT_MS);
     let stdout = "";
     let stderr = "";

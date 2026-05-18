@@ -29,10 +29,34 @@ const { handleChat } = await import("./chat.mjs");
 const { handleBookSession } = await import("./book-session.mjs");
 const { handleRunCode } = await import("./run-code.mjs");
 
-const server = http.createServer(async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://btechverse.cloud",
+  "https://www.btechverse.cloud",
+  "http://localhost:8080",
+  "http://127.0.0.1:8080",
+];
+
+function getAllowedOrigins() {
+  const fromEnv = (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return fromEnv.length > 0 ? fromEnv : DEFAULT_ALLOWED_ORIGINS;
+}
+
+function setCors(req, res) {
+  const origin = req.headers.origin;
+  const allowed = getAllowedOrigins();
+  if (origin && allowed.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
+const server = http.createServer(async (req, res) => {
+  setCors(req, res);
 
   if (req.method === "OPTIONS") {
     res.writeHead(200);
@@ -106,6 +130,16 @@ const server = http.createServer(async (req, res) => {
     const body = Buffer.concat(chunks).toString("utf8") || "{}";
     try {
       const data = JSON.parse(body);
+      const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || "amanvverma109@gmail.com")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      const adminEmail = String(data.adminEmail || "").trim().toLowerCase();
+      if (!adminEmail || !adminEmails.includes(adminEmail)) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Admin only" }));
+        return;
+      }
       const { uploadUrl, fileUrl } = await getUploadPresignedUrl({
         branchCode: data.branchCode,
         category: data.category,

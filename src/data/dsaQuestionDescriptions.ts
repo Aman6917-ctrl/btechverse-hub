@@ -15,7 +15,7 @@ function norm(s: string): string {
   return s
     .toLowerCase()
     .replace(/\s+/g, " ")
-    .replace(/\s*[\/\-]\s*/g, " ")
+    .replace(/\s*[-/]\s*/g, " ")
     .trim();
 }
 

@@ -48,7 +48,15 @@ export default function Auth() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/";
+  const redirectTo = (() => {
+    const raw = searchParams.get("redirect");
+    if (!raw) return "/";
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  })();
   const hasRedirected = useRef(false);
 
   // Show toast when returning from Google redirect with an error (e.g. user cancelled)
@@ -74,43 +82,13 @@ export default function Auth() {
     document.body.scrollTop = 0;
   };
 
-  const getRedirectUrl = (path?: string) => {
-    let target = path ?? redirectTo ?? "/";
-    if (!target || target === "/auth" || target.startsWith("/auth?")) target = "/";
-    return target.startsWith("http")
-      ? target
-      : `${window.location.origin}${target.startsWith("/") ? target : `/${target}`}`;
-  };
-
-  const doRedirect = (path?: string) => {
-    const url = getRedirectUrl(path);
-    try {
-      window.location.href = url;
-    } catch {
-      window.location.replace(url);
-    }
-  };
-
-  // When user is logged in: redirect and retry every 300ms until we leave /auth or /auth/callback
+  // Already logged in — leave /auth without full page reload
   useEffect(() => {
     if (loading || !user) return;
     if (hasRedirected.current) return;
     hasRedirected.current = true;
-
-    const url = getRedirectUrl();
-    toast({ title: "Login successful! 🎉", description: "Redirecting you…" });
-    doRedirect();
-
-    const interval = setInterval(() => {
-      if (typeof window !== "undefined" && (window.location.pathname === "/auth" || window.location.pathname === "/auth/callback")) {
-        window.location.href = url;
-      } else {
-        clearInterval(interval);
-      }
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, [user, loading, redirectTo]);
+    navigate(redirectTo, { replace: true });
+  }, [user, loading, redirectTo, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -189,9 +167,11 @@ export default function Auth() {
           }
         } else {
           toast({
-            title: "Account Created! 🎉",
-            description: "Check your email to verify your account.",
+            title: "Account created! 🎉",
+            description: "Welcome — redirecting you now.",
           });
+          const target = redirectTo || "/";
+          setTimeout(() => navigate(target, { replace: true }), 0);
         }
       }
     } catch (err) {
@@ -231,14 +211,18 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 px-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-4"
+          className="flex flex-col items-center gap-2"
         >
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-medium">Loading…</p>
+          <div className="relative flex h-11 w-11 items-center justify-center">
+            <span className="absolute inset-0 rounded-full border-2 border-primary/15" aria-hidden />
+            <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" aria-hidden />
+            <Loader2 className="h-5 w-5 text-primary" aria-hidden />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading…</p>
         </motion.div>
       </div>
     );
