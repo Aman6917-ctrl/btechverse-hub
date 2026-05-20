@@ -78,6 +78,11 @@ const server = http.createServer(async (req, res) => {
   pathname = pathname.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
   const query = Object.fromEntries(new URL(rawUrl.startsWith("http") ? rawUrl : "http://x" + rawUrl).searchParams);
 
+  // Socket.IO handles /socket.io on the same http.Server — do not answer here (would 404 WS/polling).
+  if (pathname === "/socket.io" || pathname.startsWith("/socket.io/")) {
+    return;
+  }
+
   const isBookSession = pathname === "/api/book-session" || pathname.endsWith("/book-session");
 
   // POST /api/book-session – check first, exact path

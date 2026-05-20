@@ -27,7 +27,8 @@ npm run dev
 |----------|----------|--------|
 | `VITE_FIREBASE_*` | Firebase Console → Project settings | Login ke liye |
 | `VITE_SUPABASE_*` | Supabase dashboard | Agar use ho raha ho |
-| `VITE_API_BASE_URL` | — | Production API URL (e.g. `https://api.btechverse.cloud`) |
+| `VITE_API_BASE_URL` | — | `https://btechverse-hub.onrender.com` (ya apna API URL) |
+| `VITE_STUN_URLS` / `VITE_TURN_*` | coturn / provider | Video meeting — bina TURN ke strict NAT fail ho sakta hai (`docs/WEBRTC_TURN.md`) |
 | `OPENROUTER_API_KEY` | openrouter.ai | AI Buddy (server) |
 
 ### Book Session (email + WhatsApp)
@@ -45,3 +46,17 @@ npm run dev
 - **Output:** `dist`
 
 Server (API) agar alag deploy kar rahe ho (e.g. Railway, Render), wahan bhi same env variables add karo (OPENROUTER, RESEND, TWILIO, etc.).
+
+### Render (API + Socket.IO signaling)
+
+| Setting | Value |
+|---------|--------|
+| **Start command** | `npm start` ya `node --import tsx/esm server/api.mjs` |
+| **Build command** | `npm install` (optional; start installs deps on boot) |
+| `ALLOWED_ORIGINS` | `https://btechverse.cloud,https://www.btechverse.cloud` (+ Netlify preview URL agar use ho) |
+
+Deploy ke baad check: `curl 'https://YOUR-API.onrender.com/socket.io/?EIO=4&transport=polling'` — body me `0{"sid"` jaisa Engine.IO packet hona chahiye, `{"error":"Not found"}` nahi.
+
+### Netlify (frontend)
+
+`VITE_*` change ke baad **Clear cache and deploy**. Meeting ke liye kam se kam `VITE_API_BASE_URL` + STUN/TURN vars set karo.
