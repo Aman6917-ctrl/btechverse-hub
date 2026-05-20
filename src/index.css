@@ -4,6 +4,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Meet-style active speaker glow (meeting room) */
+@keyframes speaker-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(138, 180, 248, 0.75),
+      0 0 18px rgba(138, 180, 248, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(138, 180, 248, 1),
+      0 0 32px rgba(138, 180, 248, 0.55);
+  }
+}
+
 @layer base {
   :root {
     --background: 60 9% 98%;

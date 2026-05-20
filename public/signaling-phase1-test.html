@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BTechVerse — Phase 1 signaling test</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+      input, button { margin: 0.25rem 0; padding: 0.5rem; }
+      #log { background: #111; color: #0f0; padding: 1rem; height: 280px; overflow: auto; font-size: 12px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Phase 1 signaling test</h1>
+    <p>Open this page in <strong>two tabs</strong> (via <code>npm run dev</code> → http://localhost:8080/signaling-phase1-test.html).</p>
+    <label>Room ID <input id="roomId" value="XK7M2A" /></label><br />
+    <label>Your name <input id="name" value="TestUser" /></label><br />
+    <label>User id <input id="odId" value="user_1" /></label><br />
+    <button id="join">Join room</button>
+    <button id="leave">Leave room</button>
+    <pre id="log"></pre>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script>
+      const logEl = document.getElementById("log");
+      function log(msg, data) {
+        const line = data ? msg + " " + JSON.stringify(data) : msg;
+        logEl.textContent += line + "\n";
+        logEl.scrollTop = logEl.scrollHeight;
+        console.log(line);
+      }
+      // Same origin as Vite → proxy forwards /socket.io to :3001
+      const socket = io({ path: "/socket.io" });
+      socket.on("connect", () => log("connected", { id: socket.id }));
+      socket.on("room-users", (p) => log("← room-users", p));
+      socket.on("user-joined", (p) => log("← user-joined", p));
+      socket.on("user-left", (p) => log("← user-left", p));
+      socket.on("disconnect", (r) => log("disconnected", { reason: r }));
+      document.getElementById("join").onclick = () => {
+        socket.emit("join-room", {
+          roomId: document.getElementById("roomId").value,
+          odId: document.getElementById("odId").value,
+          displayName: document.getElementById("name").value,
+        });
+        log("→ join-room");
+      };
+      document.getElementById("leave").onclick = () => {
+        socket.emit("leave-room", { roomId: document.getElementById("roomId").value });
+        log("→ leave-room");
+      };
+    </script>
+  </body>
+</html>

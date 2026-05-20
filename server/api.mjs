@@ -1,6 +1,10 @@
 /**
- * Dev API server: /api/presign (S3) and POST /api/chat (OpenRouter).
- * Run: npm run dev:api (port 3001). Vite proxies /api to this when you run npm run dev.
+ * Dev API server: REST on /api/* + Socket.IO signaling on /socket.io (same port).
+ *
+ * Run: npm run dev:api  →  node --import tsx/esm server/api.mjs  (port 3001)
+ * Full dev: npm run dev  →  api + Vite :8080 (proxies /api and /socket.io → :3001)
+ *
+ * Startup order: loadEnv → createServer → attachSignaling(server) → server.listen()
  */
 import http from "http";
 import { readFileSync } from "fs";
@@ -214,8 +218,17 @@ const server = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: "Not found" }));
 });
 
+// ---------------------------------------------------------------------------
+// Phase 1 signaling: Socket.IO on the SAME http.Server (port 3001)
+// Requires: npm install socket.io tsx — run api with: node --import tsx/esm server/api.mjs
+// ---------------------------------------------------------------------------
+const { attachSignaling } = await import("./signaling/attach.ts");
+attachSignaling(server, { allowedOrigins: getAllowedOrigins() });
+
 server.listen(PORT, () => {
-  console.log(`API: http://localhost:${PORT} (presign + chat + book-session)`);
+  console.log(
+    `API: http://localhost:${PORT} (presign + chat + book-session + signaling /socket.io)`
+  );
 }).on("error", (err) => {
   if (err.code === "EADDRINUSE") {
     console.error(`Port ${PORT} in use. Run: kill $(lsof -t -i:${PORT})`);

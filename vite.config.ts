@@ -305,6 +305,11 @@ export default defineConfig(() => ({
     },
     proxy: {
       "/api": "http://localhost:3001",
+      // Socket.IO: WebSocket + long-polling to same backend as REST API
+      "/socket.io": {
+        target: "http://localhost:3001",
+        ws: true,
+      },
     },
   },
   plugins: [devApiPlugin(), react()],

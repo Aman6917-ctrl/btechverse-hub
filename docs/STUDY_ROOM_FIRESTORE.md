@@ -53,8 +53,8 @@ If the chat query errors with a link to create an index, click that link. Usuall
 - Collection: `studyRooms/{roomId}/messages`
 - Fields: `createdAt` ascending
 
-## Jitsi (voice)
+## Video meeting (WebRTC)
 
-Voice opens on **`/study/room/{CODE}/voice`** (embedded Jitsi on Btechverse). When the user leaves or ends the meet, they return to **`/study/room/{CODE}`** — not the Jitsi marketing page.
+Video opens on **`/study/room/{CODE}/meeting`** (custom mesh WebRTC + Socket.IO signaling on the Node API). Legacy **`/voice`** URLs redirect to **`/meeting`**. Leaving the call returns to **`/study/room/{CODE}`** (chat + timer).
 
-Room name on meet.jit.si: `BtechverseStudy{CODE}`. No extra Firebase config for Jitsi.
+No extra Firebase config for signaling; ensure the API server is running with Socket.IO (`npm run dev`).

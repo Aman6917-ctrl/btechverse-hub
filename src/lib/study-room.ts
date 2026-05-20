@@ -11,21 +11,15 @@ export function generateRoomCode(length = 6): string {
   return s;
 }
 
-/** Stable Jitsi room name for a Btechverse study room code */
-export function getJitsiRoomName(roomCode: string): string {
+/** Custom WebRTC meeting (replaces legacy Jitsi voice route). */
+export function getStudyRoomMeetingPath(roomCode: string): string {
   const safe = roomCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  return `BtechverseStudy${safe}`;
+  return `/study/room/${safe}/meeting`;
 }
 
-/** Direct meet.jit.si link (legacy). Prefer /study/room/:id/voice for hangup → site redirect. */
-export function getJitsiRoomUrl(roomCode: string): string {
-  const name = getJitsiRoomName(roomCode);
-  return `https://meet.jit.si/${encodeURIComponent(name)}#config.prejoinPageEnabled=false`;
-}
-
+/** @deprecated Use getStudyRoomMeetingPath — redirects from old /voice URLs */
 export function getStudyRoomVoicePath(roomCode: string): string {
-  const safe = roomCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  return `/study/room/${safe}/voice`;
+  return getStudyRoomMeetingPath(roomCode);
 }
 
 export const STUDY_ROOMS_COLLECTION = "studyRooms";

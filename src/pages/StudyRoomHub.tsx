@@ -89,7 +89,7 @@ export default function StudyRoomHub() {
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2 tracking-tight">Group study rooms</h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">
-            Create a room, share the code, and study together—chat stays here; voice opens in a new tab with Jitsi.
+            Create a room, share the code, and study together—chat in the room, video in our built-in meeting.
           </p>
         </div>
 
@@ -151,7 +151,7 @@ export default function StudyRoomHub() {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Signed-in users only. Voice uses <strong>Open Jitsi</strong> (free, opens in a new tab).
+            Signed-in users only. Video uses <strong>custom WebRTC</strong> on Btechverse (no third-party SDK).
           </p>
         </div>
 

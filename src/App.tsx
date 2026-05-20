@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -20,7 +20,7 @@ import UploadPage from "./pages/UploadPage";
 import NotFound from "./pages/NotFound";
 import StudyRoomHub from "./pages/StudyRoomHub";
 import StudyRoomSession from "./pages/StudyRoomSession";
-import StudyRoomVoice from "./pages/StudyRoomVoice";
+import StudyRoomMeeting from "./pages/StudyRoomMeeting";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 
 const queryClient = new QueryClient();
@@ -82,7 +82,8 @@ const App = () => (
             <Route path="/interview-prep/:company/:type" element={<ProtectedRoute><InterviewPrepQuestions /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
             <Route path="/study" element={<StudyRoomHub />} />
-            <Route path="/study/room/:roomId/voice" element={<ProtectedRoute><StudyRoomVoice /></ProtectedRoute>} />
+            <Route path="/study/room/:roomId/meeting" element={<ProtectedRoute><StudyRoomMeeting /></ProtectedRoute>} />
+            <Route path="/study/room/:roomId/voice" element={<Navigate to="../meeting" replace />} />
             <Route path="/study/room/:roomId" element={<ProtectedRoute><StudyRoomSession /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

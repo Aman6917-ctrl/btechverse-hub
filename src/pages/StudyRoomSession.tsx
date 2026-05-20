@@ -20,19 +20,18 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import {
-  getStudyRoomVoicePath,
+  getStudyRoomMeetingPath,
   STUDY_MESSAGES_SUBCOLLECTION,
   STUDY_ROOMS_COLLECTION,
 } from "@/lib/study-room";
 import {
   ArrowLeft,
   Copy,
-  ExternalLink,
   Loader2,
-  Mic,
   Send,
   Timer,
   Trash2,
+  Video,
 } from "lucide-react";
 
 type RoomDoc = {
@@ -71,11 +70,6 @@ export default function StudyRoomSession() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [tick, setTick] = useState(0);
-
-  const displayName =
-    user?.displayName?.trim() ||
-    user?.email?.split("@")[0]?.trim() ||
-    "Student";
 
   const isHost = !!(user?.uid && room?.createdBy === user.uid);
 
@@ -172,9 +166,8 @@ export default function StudyRoomSession() {
     toast({ title: "Link copied", description: "Invite link — dost ko bhejo." });
   };
 
-  const openJitsi = () => {
-    const path = getStudyRoomVoicePath(roomId);
-    window.open(`${window.location.origin}${path}`, "_blank");
+  const joinVideoMeeting = () => {
+    navigate(getStudyRoomMeetingPath(roomId));
   };
 
   const startFocus = async () => {
@@ -222,7 +215,10 @@ export default function StudyRoomSession() {
       await addDoc(collection(db, STUDY_ROOMS_COLLECTION, roomId, STUDY_MESSAGES_SUBCOLLECTION), {
         text,
         uid: user.uid,
-        displayName,
+        displayName:
+          user.displayName?.trim() ||
+          user.email?.split("@")[0]?.trim() ||
+          "Student",
         createdAt: serverTimestamp(),
       });
     } catch (e) {
@@ -300,15 +296,15 @@ export default function StudyRoomSession() {
 
           <div className="rounded-xl border-2 border-border bg-card p-4 flex flex-col justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <Mic className="h-4 w-4 text-accent" />
-              Voice (free)
+              <Video className="h-4 w-4 text-accent" />
+              Video call
             </div>
             <p className="text-xs text-muted-foreground">
-              Voice opens in a new tab. When you end the call, you&apos;ll return to this study room.
+              Built-in WebRTC meeting — camera, mic, and live participant grid on Btechverse.
             </p>
-            <Button variant="secondary" className="w-full" onClick={openJitsi}>
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open Jitsi
+            <Button variant="secondary" className="w-full" onClick={joinVideoMeeting}>
+              <Video className="h-4 w-4 mr-2" />
+              Join video meeting
             </Button>
           </div>
         </div>
