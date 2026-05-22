@@ -23,11 +23,15 @@ import {
   getIceDisconnectGraceMs,
   getIceRestartMaxAttempts,
   getRtcConfiguration,
+  resolveRtcConfiguration,
+  runIceConnectivityTest,
+  setIceConnectivityResult,
   type IceDiagnostics,
 } from "@/lib/webrtc/config";
 import {
   detectTransportMode,
   formatCandidateForLog,
+  hasRelayCandidate,
   qualityFromIceState,
   type PeerConnectionQuality,
   type PeerTransportMode,
@@ -131,7 +135,10 @@ export function useMeshWebRTC({
   const iceRestartMaxRef = useRef(getIceRestartMaxAttempts());
   const iceGraceMsRef = useRef(getIceDisconnectGraceMs());
   const rtcConfigRef = useRef(getRtcConfiguration());
-  const iceDiagnostics = getIceDiagnostics();
+  const [iceReady, setIceReady] = useState(false);
+  const [iceDiagnostics, setIceDiagnostics] = useState<IceDiagnostics>(() =>
+    getIceDiagnostics()
+  );
   const roomIdRef = useRef(roomId);
   const localStreamRef = useRef(localStream);
   roomIdRef.current = roomId;
@@ -415,8 +422,9 @@ export function useMeshWebRTC({
 
       pc.onicecandidate = (ev) => {
         if (ev.candidate) {
+          const relay = hasRelayCandidate(ev.candidate);
           pushLog(
-            `[ice] local candidate → ${peerId.slice(0, 8)} ${formatCandidateForLog(ev.candidate)}`
+            `[ice] local candidate → ${peerId.slice(0, 8)} ${formatCandidateForLog(ev.candidate)}${relay ? " ✓relay" : ""}`
           );
           if (!socket?.connected) return;
           socket.emit(WebRTCEvents.ICE, {
@@ -586,6 +594,51 @@ export function useMeshWebRTC({
     [pushLog]
   );
 
+  // Resolve ICE servers (free TURN + optional Metered API) and run connectivity probe
+  useEffect(() => {
+    if (!enabled) {
+      setIceReady(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      pushLog("[ice] resolving STUN/TURN providers…");
+      try {
+        const config = await resolveRtcConfiguration();
+        if (cancelled) return;
+        rtcConfigRef.current = config;
+
+        const probe = await runIceConnectivityTest(config.iceServers ?? [], {
+          label: "meeting-preflight",
+        });
+        if (cancelled) return;
+
+        setIceConnectivityResult(probe);
+        setIceDiagnostics(getIceDiagnostics(config.iceServers));
+        pushLog(
+          `[ice] preflight ${probe.status}: relay=${probe.relayVerified} srflx=${probe.srflxVerified} (${probe.durationMs}ms)`
+        );
+        if (!probe.relayVerified) {
+          pushLog("[ice] no relay yet — will retry via TCP/TLS TURN or direct path");
+        }
+        setIceReady(true);
+      } catch (e) {
+        if (cancelled) return;
+        webrtcWarn("[ice] async resolve failed — sync fallback", { error: String(e) });
+        rtcConfigRef.current = getRtcConfiguration();
+        setIceDiagnostics(getIceDiagnostics());
+        setIceReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      setIceReady(false);
+    };
+  }, [enabled, pushLog]);
+
   // Sync participant metadata for labels
   useEffect(() => {
     for (const p of participants) {
@@ -623,7 +676,7 @@ export function useMeshWebRTC({
 
   // Joiner: offer to everyone already in room
   useEffect(() => {
-    if (!socket || !enabled || !localStream) return;
+    if (!socket || !enabled || !iceReady || !localStream) return;
 
     const onRoomUsers = (payload: RoomUsersPayload) => {
       if (normalizeRoomId(payload.roomId) !== normalizeRoomId(roomIdRef.current)) return;
@@ -643,11 +696,11 @@ export function useMeshWebRTC({
 
     socket.on(SignalingEvents.ROOM_USERS, onRoomUsers);
     return () => socket.off(SignalingEvents.ROOM_USERS, onRoomUsers);
-  }, [socket, enabled, localStream, offerToPeer, pushLog]);
+  }, [socket, enabled, iceReady, localStream, offerToPeer, pushLog]);
 
   // user-joined: existing members wait for offer from newcomer (no offer here)
   useEffect(() => {
-    if (!socket || !enabled) return;
+    if (!socket || !enabled || !iceReady) return;
 
     const onUserJoined = () => {
       pushLog("user-joined: waiting for peer offer(s)");
@@ -655,11 +708,11 @@ export function useMeshWebRTC({
 
     socket.on(SignalingEvents.USER_JOINED, onUserJoined);
     return () => socket.off(SignalingEvents.USER_JOINED, onUserJoined);
-  }, [socket, enabled, pushLog]);
+  }, [socket, enabled, iceReady, pushLog]);
 
   // WebRTC signaling
   useEffect(() => {
-    if (!socket || !enabled) return;
+    if (!socket || !enabled || !iceReady) return;
 
     const onOffer = (p: WebRTCSignalPayload) => {
       if (normalizeRoomId(p.roomId) !== normalizeRoomId(roomIdRef.current)) return;
@@ -684,21 +737,21 @@ export function useMeshWebRTC({
       socket.off(WebRTCEvents.ANSWER, onAnswer);
       socket.off(WebRTCEvents.ICE, onIce);
     };
-  }, [socket, enabled, handleRemoteOffer, handleRemoteAnswer, addIceCandidate]);
+  }, [socket, enabled, iceReady, handleRemoteOffer, handleRemoteAnswer, addIceCandidate]);
 
   // Peer left → close that PC only
   useEffect(() => {
-    if (!socket || !enabled) return;
+    if (!socket || !enabled || !iceReady) return;
     const onUserLeft = (p: UserLeftPayload) => {
       removePeer(p.socketId);
     };
     socket.on(SignalingEvents.USER_LEFT, onUserLeft);
     return () => socket.off(SignalingEvents.USER_LEFT, onUserLeft);
-  }, [socket, enabled, removePeer]);
+  }, [socket, enabled, iceReady, removePeer]);
 
   // Socket reconnect
   useEffect(() => {
-    if (!socket || !enabled) return;
+    if (!socket || !enabled || !iceReady) return;
     const onDisconnect = () => {
       setStatus("reconnecting");
       pushLog("signaling disconnected — peers may need renegotiation");
@@ -718,7 +771,7 @@ export function useMeshWebRTC({
       socket.off("disconnect", onDisconnect);
       socket.off("connect", onConnect);
     };
-  }, [socket, enabled, attemptIceRestart, pushLog]);
+  }, [socket, enabled, iceReady, attemptIceRestart, pushLog]);
 
   useEffect(() => {
     return () => teardownAll();

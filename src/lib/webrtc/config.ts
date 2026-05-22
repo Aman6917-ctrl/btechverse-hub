@@ -5,12 +5,19 @@
 export {
   buildIceServers,
   getRtcConfiguration,
+  resolveIceServers,
+  resolveRtcConfiguration,
   getIceDiagnostics,
+  getIceConnectivityResult,
+  setIceConnectivityResult,
   getIceRestartMaxAttempts,
   getIceDisconnectGraceMs,
   isTurnOnlyTestMode,
   type IceDiagnostics,
 } from "./ice-config";
+
+export { runIceConnectivityTest, type IceConnectivityResult } from "./ice-connectivity";
+export { parseIceProviders, type IceProviderId } from "./ice-providers";
 
 import { getRtcConfiguration } from "./ice-config";
 

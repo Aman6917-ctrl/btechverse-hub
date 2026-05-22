@@ -68,8 +68,20 @@ export function MeetingConnectionBanner({
 
       {!ice.turnConfigured && !ice.turnOnlyMode && (
         <span className="text-[10px] text-amber-200/80 hidden sm:inline">
-          STUN-only — strict Wi‑Fi may need TURN (see docs)
+          STUN-only — add free TURN via env (see docs)
         </span>
+      )}
+
+      {ice.turnConfigured && ice.connectivity?.relayVerified === false && (
+        <span className="text-[10px] text-amber-200/80 hidden sm:inline">
+          TURN configured — relay probe pending (TCP/TLS fallback)
+        </span>
+      )}
+
+      {ice.connectivity?.relayVerified && (
+        <Badge variant="outline" className="text-[10px] gap-1 border-[#8ab4f8]/40 text-[#8ab4f8]">
+          TURN OK
+        </Badge>
       )}
 
       {directPeers > 0 && (
@@ -87,7 +99,9 @@ export function MeetingConnectionBanner({
 
       {import.meta.env.DEV && (
         <span className="text-[10px] font-mono opacity-70 ml-auto hidden lg:inline">
-          ICE policy={ice.iceTransportPolicy} · STUN×{ice.stunCount} · TURN×{ice.turnUrlCount}
+          ICE={ice.iceTransportPolicy} · {ice.providers.join("+")} · STUN×{ice.stunCount} ·
+          TURN×{ice.turnUrlCount}
+          {ice.connectivity ? ` · relay=${ice.connectivity.relayVerified}` : ""}
         </span>
       )}
     </div>

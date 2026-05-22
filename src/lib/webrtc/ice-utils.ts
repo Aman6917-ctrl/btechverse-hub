@@ -2,7 +2,7 @@
  * ICE candidate parsing, transport detection, connection quality helpers.
  */
 
-import { webrtcLog } from "@/lib/webrtc/logger";
+import { webrtcLog, webrtcWarn } from "@/lib/webrtc/logger";
 
 export type IceCandidateKind = "host" | "srflx" | "prflx" | "relay" | "unknown";
 
@@ -28,6 +28,29 @@ export function parseCandidateKind(
   const m = line.match(/typ (\w+)/);
   const typ = m?.[1] as IceCandidateKind | undefined;
   return typ ?? "unknown";
+}
+
+export function countCandidatesByKind(
+  kinds: IceCandidateKind[]
+): Record<IceCandidateKind, number> {
+  const counts: Record<IceCandidateKind, number> = {
+    host: 0,
+    srflx: 0,
+    prflx: 0,
+    relay: 0,
+    unknown: 0,
+  };
+  for (const k of kinds) {
+    if (k in counts && k !== "unknown") counts[k]++;
+    else counts.unknown++;
+  }
+  return counts;
+}
+
+export function hasRelayCandidate(
+  candidate: RTCIceCandidateInit | RTCIceCandidate | string | null | undefined
+): boolean {
+  return parseCandidateKind(candidate) === "relay";
 }
 
 export function formatCandidateForLog(
