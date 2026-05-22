@@ -38,7 +38,7 @@ import {
 } from "@/lib/webrtc/ice-utils";
 import { isScreenShareTrack } from "@/lib/webrtc/screen-share";
 import { webrtcError, webrtcLog, webrtcWarn } from "@/lib/webrtc/logger";
-import { WebRTCEvents } from "@/lib/webrtc/types";
+import { WebRTCEvents, type AppRtcConfiguration } from "@/lib/webrtc/types";
 
 interface PeerMeta {
   odId: string;
@@ -139,11 +139,23 @@ export function useMeshWebRTC({
   const disconnectTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const iceRestartMaxRef = useRef(getIceRestartMaxAttempts());
   const iceGraceMsRef = useRef(getIceDisconnectGraceMs());
-  const rtcConfigRef = useRef(getRtcConfiguration());
+  const rtcConfigRef = useRef<AppRtcConfiguration>({ iceServers: [] });
+  const iceInitRoomRef = useRef<string | null>(null);
   const [iceReady, setIceReady] = useState(false);
-  const [iceDiagnostics, setIceDiagnostics] = useState<IceDiagnostics>(() =>
-    getIceDiagnostics()
-  );
+  const [iceDiagnostics, setIceDiagnostics] = useState<IceDiagnostics>(() => ({
+    turnConfigured: false,
+    freeTurnEnabled: true,
+    providers: ["stun", "openrelay"],
+    openRelayEnabled: true,
+    meteredEnabled: false,
+    customTurnEnabled: false,
+    meteredApiConfigured: false,
+    turnOnlyMode: false,
+    iceTransportPolicy: "all",
+    stunCount: 0,
+    turnUrlCount: 0,
+    connectivity: null,
+  }));
   const roomIdRef = useRef(roomId);
   const localStreamRef = useRef(localStream);
   const handleRemoteOfferRef = useRef<(p: WebRTCSignalPayload) => Promise<void>>(
@@ -344,6 +356,9 @@ export function useMeshWebRTC({
     for (const peerId of [...peersRef.current.keys()]) {
       removePeer(peerId);
     }
+    iceInitRoomRef.current = null;
+    rtcConfigReadyRef.current = false;
+    setIceReady(false);
     setStatus("idle");
   }, [pushLog, removePeer]);
 
@@ -630,15 +645,18 @@ export function useMeshWebRTC({
     [pushLog]
   );
 
-  // Resolve ICE config — do NOT block mesh on preflight probe (was causing missed offers)
+  // Resolve ICE config once per room — do not reset when `enabled` flickers
   useEffect(() => {
-    if (!enabled) {
-      rtcConfigReadyRef.current = false;
-      setIceReady(false);
+    if (!enabled) return;
+
+    const roomKey = normalizeRoomId(roomIdRef.current);
+    if (rtcConfigReadyRef.current && iceInitRoomRef.current === roomKey) {
+      setIceReady(true);
       return;
     }
 
     let cancelled = false;
+    iceInitRoomRef.current = roomKey;
 
     void (async () => {
       pushLog("[ice] resolving STUN/TURN providers…");
@@ -651,7 +669,6 @@ export function useMeshWebRTC({
         setIceReady(true);
         pushLog("[ice] RTC config ready — mesh can negotiate");
 
-        // Preflight in background (does not block offers)
         void runIceConnectivityTest(config.iceServers ?? [], {
           label: "meeting-preflight",
           timeoutMs: 4000,
@@ -664,7 +681,6 @@ export function useMeshWebRTC({
           );
         });
 
-        // Process offers that arrived while config was loading
         for (const [peerId, payload] of pendingOffersRef.current.entries()) {
           pendingOffersRef.current.delete(peerId);
           void handleRemoteOfferRef.current(payload);
@@ -674,7 +690,7 @@ export function useMeshWebRTC({
         webrtcWarn("[ice] async resolve failed — sync fallback", { error: String(e) });
         rtcConfigRef.current = getRtcConfiguration();
         rtcConfigReadyRef.current = true;
-        setIceDiagnostics(getIceDiagnostics());
+        setIceDiagnostics(getIceDiagnostics(rtcConfigRef.current.iceServers));
         setIceReady(true);
         for (const [peerId, payload] of pendingOffersRef.current.entries()) {
           pendingOffersRef.current.delete(peerId);
@@ -685,10 +701,8 @@ export function useMeshWebRTC({
 
     return () => {
       cancelled = true;
-      rtcConfigReadyRef.current = false;
-      setIceReady(false);
     };
-  }, [enabled, pushLog]);
+  }, [enabled, roomId, pushLog]);
 
   // Sync participant metadata for labels
   useEffect(() => {

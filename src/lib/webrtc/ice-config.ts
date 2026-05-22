@@ -28,6 +28,15 @@ function splitUrls(raw: string): string[] {
 }
 
 let cachedConnectivity: IceConnectivityResult | null = null;
+let cachedStaticIceServers: RTCIceServer[] | null = null;
+let loggedIceStackBuild = false;
+let loggedRtcConfiguration = false;
+
+export function clearIceServerCache(): void {
+  cachedStaticIceServers = null;
+  loggedIceStackBuild = false;
+  loggedRtcConfiguration = false;
+}
 
 export function setIceConnectivityResult(result: IceConnectivityResult | null): void {
   cachedConnectivity = result;
@@ -37,10 +46,12 @@ export function getIceConnectivityResult(): IceConnectivityResult | null {
   return cachedConnectivity;
 }
 
-/** Build iceServers synchronously from env provider presets. */
+/** Build iceServers synchronously from env provider presets (cached). */
 export function buildIceServers(): RTCIceServer[] {
+  if (cachedStaticIceServers) return cachedStaticIceServers;
+
   const sets = collectProviderSets();
-  const servers = flattenProvidersToIceServers(sets);
+  const servers = flattenProvidersToIceServers(sets, { logProviders: !loggedIceStackBuild });
 
   const hasTurn = sets.some(
     (s) =>
@@ -50,18 +61,22 @@ export function buildIceServers(): RTCIceServer[] {
       s.turnUdp.length + s.turnTcp.length + s.turnTls.length > 0
   );
 
-  if (!hasTurn) {
-    webrtcWarn(
-      "[ice] no TURN credentials — enable VITE_ICE_ENABLE_FREE_TURN or add Metered/OpenRelay/custom vars"
-    );
-  } else {
-    webrtcLog("[ice] ICE stack built", {
-      providers: parseIceProviders(),
-      freeTurn: isFreeTurnEnabled(),
-      serverEntries: servers.length,
-    });
+  if (!loggedIceStackBuild) {
+    if (!hasTurn) {
+      webrtcWarn(
+        "[ice] no TURN credentials — enable VITE_ICE_ENABLE_FREE_TURN or add Metered/OpenRelay/custom vars"
+      );
+    } else {
+      webrtcLog("[ice] ICE stack built", {
+        providers: parseIceProviders(),
+        freeTurn: isFreeTurnEnabled(),
+        serverEntries: servers.length,
+      });
+    }
+    loggedIceStackBuild = true;
   }
 
+  cachedStaticIceServers = servers;
   return servers;
 }
 
@@ -132,13 +147,16 @@ export function getRtcConfiguration(iceServers?: RTCIceServer[]): AppRtcConfigur
     iceCandidatePoolSize: 10,
   };
 
-  webrtcLog("[ice] RTCConfiguration", {
-    iceServers: servers.length,
-    iceTransportPolicy: policy,
-    turnOnly: policy === "relay",
-    poolSize: config.iceCandidatePoolSize,
-    providers: parseIceProviders(),
-  });
+  if (!loggedRtcConfiguration) {
+    webrtcLog("[ice] RTCConfiguration", {
+      iceServers: servers.length,
+      iceTransportPolicy: policy,
+      turnOnly: policy === "relay",
+      poolSize: config.iceCandidatePoolSize,
+      providers: parseIceProviders(),
+    });
+    loggedRtcConfiguration = true;
+  }
 
   return config;
 }

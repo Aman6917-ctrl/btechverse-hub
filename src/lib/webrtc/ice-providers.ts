@@ -201,18 +201,18 @@ export async function fetchMeteredApiIceServers(): Promise<RTCIceServer[] | null
 
 /** Flatten provider sets into RTCIceServer[] with fallback ordering. */
 export function flattenProvidersToIceServers(
-  sets: TurnEndpointSet[]
+  sets: TurnEndpointSet[],
+  options?: { logProviders?: boolean }
 ): RTCIceServer[] {
+  const logProviders = options?.logProviders ?? false;
   const servers: RTCIceServer[] = [];
 
-  // 1) All STUN first (cheap discovery, no relay bandwidth)
   for (const set of sets) {
     for (const url of set.stun) {
       servers.push({ urls: url });
     }
   }
 
-  // 2) TURN per provider: UDP → TCP → TLS (ICE prefers lower-latency UDP when allowed)
   for (const set of sets) {
     if (!set.username || !set.credential) continue;
     const turnUrls = [...set.turnUdp, ...set.turnTcp, ...set.turnTls];
@@ -222,11 +222,13 @@ export function flattenProvidersToIceServers(
       username: set.username,
       credential: set.credential,
     });
-    webrtcLog(`[ice] provider=${set.provider} TURN`, {
-      udp: set.turnUdp.length,
-      tcp: set.turnTcp.length,
-      tls: set.turnTls.length,
-    });
+    if (logProviders) {
+      webrtcLog(`[ice] provider=${set.provider} TURN`, {
+        udp: set.turnUdp.length,
+        tcp: set.turnTcp.length,
+        tls: set.turnTls.length,
+      });
+    }
   }
 
   return servers;
