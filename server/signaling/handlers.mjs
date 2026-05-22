@@ -1,25 +1,4 @@
-/**
- * Phase 1 — Socket.IO event handlers.
- *
- * This file connects Socket.IO events to roomStore.ts:
- *   join-room  → joinRoom()  → room-users + user-joined
- *   leave-room → leaveRoom() → user-left
- *   disconnect → removeSocketFromAllRooms() → user-left (each room)
- *
- * Phase 3: webrtc-offer / webrtc-answer / webrtc-ice-candidate relay (1:1).
- */
-
-import type { Server, Socket } from "socket.io";
-import {
-  SignalingEvents,
-  type JoinRoomPayload,
-  type LeaveRoomPayload,
-  type RoomUsersPayload,
-  type UserJoinedPayload,
-  type UserLeftPayload,
-  type WebRTCRelayPayload,
-  type WebRTCSignalPayload,
-} from "./types";
+import { SignalingEvents } from "./types.mjs";
 import {
   joinRoom,
   leaveRoom,
@@ -27,11 +6,11 @@ import {
   getStoreStats,
   isSocketInRoom,
   normalizeRoomId,
-} from "./roomStore";
+} from "./roomStore.mjs";
 
 const LOG_PREFIX = "[signaling]";
 
-function log(message: string, extra?: Record<string, unknown>): void {
+function log(message, extra) {
   if (extra) {
     console.log(`${LOG_PREFIX} ${message}`, extra);
   } else {
@@ -39,44 +18,36 @@ function log(message: string, extra?: Record<string, unknown>): void {
   }
 }
 
-function isValidJoinPayload(data: unknown): data is JoinRoomPayload {
+function isValidJoinPayload(data) {
   if (!data || typeof data !== "object") return false;
-  const d = data as Record<string, unknown>;
   return (
-    typeof d.roomId === "string" &&
-    d.roomId.trim().length > 0 &&
-    typeof d.odId === "string" &&
-    d.odId.trim().length > 0 &&
-    typeof d.displayName === "string"
+    typeof data.roomId === "string" &&
+    data.roomId.trim().length > 0 &&
+    typeof data.odId === "string" &&
+    data.odId.trim().length > 0 &&
+    typeof data.displayName === "string"
   );
 }
 
-function isValidLeavePayload(data: unknown): data is LeaveRoomPayload {
+function isValidLeavePayload(data) {
   if (!data || typeof data !== "object") return false;
-  const d = data as Record<string, unknown>;
-  return typeof d.roomId === "string" && d.roomId.trim().length > 0;
+  return typeof data.roomId === "string" && data.roomId.trim().length > 0;
 }
 
-/** Phase 3 — relay offer / answer / ICE to one peer (1:1 only; no SFU). */
-function isValidWebRTCRelay(data: unknown): data is WebRTCRelayPayload {
+function isValidWebRTCRelay(data) {
   if (!data || typeof data !== "object") return false;
-  const d = data as Record<string, unknown>;
-  const hasSdp = d.sdp != null && typeof d.sdp === "object";
-  const hasCandidate = d.candidate != null && typeof d.candidate === "object";
+  const hasSdp = data.sdp != null && typeof data.sdp === "object";
+  const hasCandidate = data.candidate != null && typeof data.candidate === "object";
   return (
-    typeof d.roomId === "string" &&
-    d.roomId.trim().length > 0 &&
-    typeof d.targetSocketId === "string" &&
-    d.targetSocketId.trim().length > 0 &&
+    typeof data.roomId === "string" &&
+    data.roomId.trim().length > 0 &&
+    typeof data.targetSocketId === "string" &&
+    data.targetSocketId.trim().length > 0 &&
     (hasSdp || hasCandidate)
   );
 }
 
-function relayWebRTC(
-  socket: Socket,
-  eventName: string,
-  raw: unknown
-): void {
+function relayWebRTC(socket, eventName, raw) {
   if (!isValidWebRTCRelay(raw)) {
     log(`${eventName} rejected: invalid payload`, { socketId: socket.id, raw });
     return;
@@ -96,7 +67,7 @@ function relayWebRTC(
     return;
   }
 
-  const outbound: WebRTCSignalPayload = {
+  const outbound = {
     roomId,
     fromSocketId: socket.id,
     ...(raw.sdp ? { sdp: raw.sdp } : {}),
@@ -114,18 +85,11 @@ function relayWebRTC(
   });
 }
 
-/**
- * Register all Phase 1 signaling listeners on the Socket.IO server.
- * Called once from attach.ts when the server starts.
- */
-export function registerSignalingHandlers(io: Server): void {
-  io.on("connection", (socket: Socket) => {
+export function registerSignalingHandlers(io) {
+  io.on("connection", (socket) => {
     log("socket connected", { socketId: socket.id });
 
-    // -----------------------------------------------------------------------
-    // join-room (client → server)
-    // -----------------------------------------------------------------------
-    socket.on(SignalingEvents.JOIN_ROOM, (raw: unknown) => {
+    socket.on(SignalingEvents.JOIN_ROOM, (raw) => {
       if (!isValidJoinPayload(raw)) {
         log("join-room rejected: invalid payload", { socketId: socket.id, raw });
         return;
@@ -133,29 +97,21 @@ export function registerSignalingHandlers(io: Server): void {
 
       try {
         const result = joinRoom(socket.id, raw);
-
-        // Socket.IO built-in room: used for efficient broadcast (socket.to(roomId))
         void socket.join(result.roomId);
 
-        const roomUsersPayload: RoomUsersPayload = {
+        socket.emit(SignalingEvents.ROOM_USERS, {
           roomId: result.roomId,
           users: result.existingUsers,
-        };
+        });
 
-        // 1) Tell the joiner who was already here
-        socket.emit(SignalingEvents.ROOM_USERS, roomUsersPayload);
-
-        // 2) Tell everyone else that someone new arrived
-        const userJoinedPayload: UserJoinedPayload = {
+        socket.to(result.roomId).emit(SignalingEvents.USER_JOINED, {
           roomId: result.roomId,
           user: {
             socketId: result.participant.socketId,
             odId: result.participant.odId,
             displayName: result.participant.displayName,
           },
-        };
-
-        socket.to(result.roomId).emit(SignalingEvents.USER_JOINED, userJoinedPayload);
+        });
 
         log("join-room", {
           roomId: result.roomId,
@@ -174,10 +130,7 @@ export function registerSignalingHandlers(io: Server): void {
       }
     });
 
-    // -----------------------------------------------------------------------
-    // leave-room (client → server, graceful)
-    // -----------------------------------------------------------------------
-    socket.on(SignalingEvents.LEAVE_ROOM, (raw: unknown) => {
+    socket.on(SignalingEvents.LEAVE_ROOM, (raw) => {
       if (!isValidLeavePayload(raw)) {
         log("leave-room rejected: invalid payload", { socketId: socket.id, raw });
         return;
@@ -191,13 +144,11 @@ export function registerSignalingHandlers(io: Server): void {
 
       void socket.leave(result.roomId);
 
-      const payload: UserLeftPayload = {
+      socket.to(result.roomId).emit(SignalingEvents.USER_LEFT, {
         roomId: result.roomId,
         socketId: result.socketId,
         odId: result.odId,
-      };
-
-      socket.to(result.roomId).emit(SignalingEvents.USER_LEFT, payload);
+      });
 
       log("leave-room", {
         roomId: result.roomId,
@@ -208,35 +159,27 @@ export function registerSignalingHandlers(io: Server): void {
       });
     });
 
-    // -----------------------------------------------------------------------
-    // Phase 3 — WebRTC signaling relay (SDP + ICE, 1:1)
-    // -----------------------------------------------------------------------
-    socket.on(SignalingEvents.WEBRTC_OFFER, (raw: unknown) => {
+    socket.on(SignalingEvents.WEBRTC_OFFER, (raw) => {
       relayWebRTC(socket, SignalingEvents.WEBRTC_OFFER, raw);
     });
 
-    socket.on(SignalingEvents.WEBRTC_ANSWER, (raw: unknown) => {
+    socket.on(SignalingEvents.WEBRTC_ANSWER, (raw) => {
       relayWebRTC(socket, SignalingEvents.WEBRTC_ANSWER, raw);
     });
 
-    socket.on(SignalingEvents.WEBRTC_ICE, (raw: unknown) => {
+    socket.on(SignalingEvents.WEBRTC_ICE, (raw) => {
       relayWebRTC(socket, SignalingEvents.WEBRTC_ICE, raw);
     });
 
-    // -----------------------------------------------------------------------
-    // disconnect (tab closed, network lost — not graceful)
-    // -----------------------------------------------------------------------
     socket.on("disconnect", (reason) => {
       const left = removeSocketFromAllRooms(socket.id);
 
       for (const result of left) {
-        const payload: UserLeftPayload = {
+        io.to(result.roomId).emit(SignalingEvents.USER_LEFT, {
           roomId: result.roomId,
           socketId: result.socketId,
           odId: result.odId,
-        };
-        // socket is dead; broadcast via server to the room
-        io.to(result.roomId).emit(SignalingEvents.USER_LEFT, payload);
+        });
 
         log("disconnect → user-left", {
           roomId: result.roomId,

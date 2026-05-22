@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n api,web \"npm run dev:api\" \"vite\"",
-    "dev:api": "node --import tsx/esm server/api.mjs",
-    "start": "node --import tsx/esm server/api.mjs",
+    "dev:api": "node server/api.mjs",
+    "start": "node server/api.mjs",
     "dev:web": "vite",
     "dev:all": "npm run dev",
     "build": "vite build",

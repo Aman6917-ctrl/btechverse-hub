@@ -225,9 +225,9 @@ const server = http.createServer(async (req, res) => {
 
 // ---------------------------------------------------------------------------
 // Phase 1 signaling: Socket.IO on the SAME http.Server (port 3001)
-// Requires: npm install socket.io tsx — run api with: node --import tsx/esm server/api.mjs
+// Requires: npm install socket.io — run api with: node server/api.mjs (or npm start)
 // ---------------------------------------------------------------------------
-const { attachSignaling } = await import("./signaling/attach.ts");
+const { attachSignaling } = await import("./signaling/attach.mjs");
 attachSignaling(server, { allowedOrigins: getAllowedOrigins() });
 
 server.listen(PORT, () => {

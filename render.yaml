@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: btechverse-hub
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server/api.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production

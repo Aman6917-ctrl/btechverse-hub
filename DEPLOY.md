@@ -51,7 +51,7 @@ Server (API) agar alag deploy kar rahe ho (e.g. Railway, Render), wahan bhi same
 
 | Setting | Value |
 |---------|--------|
-| **Start command** | `npm start` ya `node --import tsx/esm server/api.mjs` |
+| **Start command** | `node server/api.mjs` ya `npm start` |
 | **Build command** | `npm install` (optional; start installs deps on boot) |
 | `ALLOWED_ORIGINS` | `https://btechverse.cloud,https://www.btechverse.cloud` (+ Netlify preview URL agar use ho) |
 
