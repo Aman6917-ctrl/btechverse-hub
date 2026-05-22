@@ -58,6 +58,7 @@ export default function StudyRoomMeeting() {
     localSocketId: signaling.socketId,
     localStream: media.cameraStream,
     participants: signaling.participants,
+    joinOfferTargets: signaling.joinOfferTargets,
     enabled:
       mediaStarted &&
       !!media.cameraStream &&

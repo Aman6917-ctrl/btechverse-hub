@@ -93,6 +93,8 @@ export interface UseMeshWebRTCOptions {
   localSocketId: string | null;
   localStream: MediaStream | null;
   participants: SignalingParticipant[];
+  /** Peers already in room when we joined — offer after ICE config ready */
+  joinOfferTargets?: string[];
   enabled?: boolean;
 }
 
@@ -118,6 +120,7 @@ export function useMeshWebRTC({
   localSocketId,
   localStream,
   participants,
+  joinOfferTargets = [],
   enabled = true,
 }: UseMeshWebRTCOptions): UseMeshWebRTCResult {
   const [status, setStatus] = useState<MeshConnectionStatus>("idle");
@@ -131,6 +134,8 @@ export function useMeshWebRTC({
   const pendingOffersRef = useRef(new Map<string, WebRTCSignalPayload>());
   const metaRef = useRef(new Map<string, PeerMeta>());
   const makingOfferRef = useRef(new Set<string>());
+  const offeredToRef = useRef(new Set<string>());
+  const rtcConfigReadyRef = useRef(false);
   const disconnectTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const iceRestartMaxRef = useRef(getIceRestartMaxAttempts());
   const iceGraceMsRef = useRef(getIceDisconnectGraceMs());
@@ -141,6 +146,9 @@ export function useMeshWebRTC({
   );
   const roomIdRef = useRef(roomId);
   const localStreamRef = useRef(localStream);
+  const handleRemoteOfferRef = useRef<(p: WebRTCSignalPayload) => Promise<void>>(
+    async () => {}
+  );
   roomIdRef.current = roomId;
   localStreamRef.current = localStream;
 
@@ -239,6 +247,7 @@ export function useMeshWebRTC({
       pendingOffersRef.current.delete(peerId);
       metaRef.current.delete(peerId);
       makingOfferRef.current.delete(peerId);
+      offeredToRef.current.delete(peerId);
       syncRemotePeersState();
     },
     [clearDisconnectTimer, pushLog, syncRemotePeersState]
@@ -498,7 +507,7 @@ export function useMeshWebRTC({
 
   const offerToPeer = useCallback(
     async (peerId: string) => {
-      if (!socket?.connected || !localStreamRef.current) return;
+      if (!socket?.connected || !localStreamRef.current || !rtcConfigReadyRef.current) return;
       if (makingOfferRef.current.has(peerId)) return;
       makingOfferRef.current.add(peerId);
 
@@ -511,6 +520,7 @@ export function useMeshWebRTC({
           targetSocketId: peerId,
           sdp: offer,
         });
+        offeredToRef.current.add(peerId);
         pushLog(`sent offer → ${peerId.slice(0, 8)}`);
         setStatus("connecting");
       } catch (e) {
@@ -521,10 +531,34 @@ export function useMeshWebRTC({
     [createPeerConnection, pushLog, socket]
   );
 
+  /** Joiner offers to peers who were already in the room (handles missed room-users event). */
+  const syncJoinOffers = useCallback(() => {
+    if (!socket?.connected || !localStreamRef.current || !rtcConfigReadyRef.current) return;
+
+    for (const peerId of joinOfferTargets) {
+      if (peerId === localSocketId) continue;
+      if (offeredToRef.current.has(peerId)) continue;
+      const p = participants.find((x) => x.socketId === peerId);
+      metaRef.current.set(
+        peerId,
+        createPeerMeta({
+          odId: p?.odId ?? "",
+          displayName: p?.displayName ?? "Participant",
+        })
+      );
+      void offerToPeer(peerId);
+    }
+  }, [joinOfferTargets, localSocketId, offerToPeer, participants, socket]);
+
   const handleRemoteOffer = useCallback(
     async (payload: WebRTCSignalPayload) => {
       const peerId = payload.fromSocketId;
       if (peerId === localSocketId) return;
+      if (!rtcConfigReadyRef.current) {
+        pendingOffersRef.current.set(peerId, payload);
+        pushLog(`offer queued (ICE config loading) from ${peerId.slice(0, 8)}`);
+        return;
+      }
       if (!localStreamRef.current) {
         pendingOffersRef.current.set(peerId, payload);
         pushLog(`offer queued (no local media yet) from ${peerId.slice(0, 8)}`);
@@ -554,6 +588,8 @@ export function useMeshWebRTC({
     },
     [createPeerConnection, flushPendingIce, localSocketId, pushLog, socket]
   );
+
+  handleRemoteOfferRef.current = handleRemoteOffer;
 
   const handleRemoteAnswer = useCallback(
     async (payload: WebRTCSignalPayload) => {
@@ -594,9 +630,10 @@ export function useMeshWebRTC({
     [pushLog]
   );
 
-  // Resolve ICE servers (free TURN + optional Metered API) and run connectivity probe
+  // Resolve ICE config — do NOT block mesh on preflight probe (was causing missed offers)
   useEffect(() => {
     if (!enabled) {
+      rtcConfigReadyRef.current = false;
       setIceReady(false);
       return;
     }
@@ -609,32 +646,46 @@ export function useMeshWebRTC({
         const config = await resolveRtcConfiguration();
         if (cancelled) return;
         rtcConfigRef.current = config;
-
-        const probe = await runIceConnectivityTest(config.iceServers ?? [], {
-          label: "meeting-preflight",
-        });
-        if (cancelled) return;
-
-        setIceConnectivityResult(probe);
+        rtcConfigReadyRef.current = true;
         setIceDiagnostics(getIceDiagnostics(config.iceServers));
-        pushLog(
-          `[ice] preflight ${probe.status}: relay=${probe.relayVerified} srflx=${probe.srflxVerified} (${probe.durationMs}ms)`
-        );
-        if (!probe.relayVerified) {
-          pushLog("[ice] no relay yet — will retry via TCP/TLS TURN or direct path");
-        }
         setIceReady(true);
+        pushLog("[ice] RTC config ready — mesh can negotiate");
+
+        // Preflight in background (does not block offers)
+        void runIceConnectivityTest(config.iceServers ?? [], {
+          label: "meeting-preflight",
+          timeoutMs: 4000,
+        }).then((probe) => {
+          if (cancelled) return;
+          setIceConnectivityResult(probe);
+          setIceDiagnostics(getIceDiagnostics(config.iceServers));
+          pushLog(
+            `[ice] preflight ${probe.status}: relay=${probe.relayVerified} srflx=${probe.srflxVerified} (${probe.durationMs}ms)`
+          );
+        });
+
+        // Process offers that arrived while config was loading
+        for (const [peerId, payload] of pendingOffersRef.current.entries()) {
+          pendingOffersRef.current.delete(peerId);
+          void handleRemoteOfferRef.current(payload);
+        }
       } catch (e) {
         if (cancelled) return;
         webrtcWarn("[ice] async resolve failed — sync fallback", { error: String(e) });
         rtcConfigRef.current = getRtcConfiguration();
+        rtcConfigReadyRef.current = true;
         setIceDiagnostics(getIceDiagnostics());
         setIceReady(true);
+        for (const [peerId, payload] of pendingOffersRef.current.entries()) {
+          pendingOffersRef.current.delete(peerId);
+          void handleRemoteOfferRef.current(payload);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
+      rtcConfigReadyRef.current = false;
       setIceReady(false);
     };
   }, [enabled, pushLog]);
@@ -674,7 +725,13 @@ export function useMeshWebRTC({
     }
   }, [localStream, attachLocalTracks, handleRemoteOffer]);
 
-  // Joiner: offer to everyone already in room
+  // Joiner: offer to peers who were in room when we joined (primary path)
+  useEffect(() => {
+    if (!socket || !enabled || !iceReady || !localStream) return;
+    syncJoinOffers();
+  }, [socket, enabled, iceReady, localStream, joinOfferTargets, syncJoinOffers]);
+
+  // Joiner: also handle live room-users if ICE was already ready
   useEffect(() => {
     if (!socket || !enabled || !iceReady || !localStream) return;
 
@@ -710,9 +767,9 @@ export function useMeshWebRTC({
     return () => socket.off(SignalingEvents.USER_JOINED, onUserJoined);
   }, [socket, enabled, iceReady, pushLog]);
 
-  // WebRTC signaling
+  // WebRTC signaling — register early so offers are not missed while ICE config loads
   useEffect(() => {
-    if (!socket || !enabled || !iceReady) return;
+    if (!socket || !enabled) return;
 
     const onOffer = (p: WebRTCSignalPayload) => {
       if (normalizeRoomId(p.roomId) !== normalizeRoomId(roomIdRef.current)) return;
@@ -737,7 +794,7 @@ export function useMeshWebRTC({
       socket.off(WebRTCEvents.ANSWER, onAnswer);
       socket.off(WebRTCEvents.ICE, onIce);
     };
-  }, [socket, enabled, iceReady, handleRemoteOffer, handleRemoteAnswer, addIceCandidate]);
+  }, [socket, enabled, handleRemoteOffer, handleRemoteAnswer, addIceCandidate]);
 
   // Peer left → close that PC only
   useEffect(() => {

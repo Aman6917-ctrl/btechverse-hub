@@ -55,6 +55,12 @@ export interface UseStudySignalingOptions {
 export interface UseStudySignalingResult {
   status: SignalingConnectionStatus;
   participants: SignalingParticipant[];
+  /**
+   * Socket ids of peers already in the room when we joined (from room-users).
+   * Mesh uses this to send WebRTC offers after ICE config is ready — the event itself
+   * may have fired before the mesh hook subscribed.
+   */
+  joinOfferTargets: string[];
   /** Live Socket.IO instance when connected — pass to useMeshWebRTC (do not create a second socket). */
   socket: Socket | null;
   socketId: string | null;
@@ -75,6 +81,7 @@ export function useStudySignaling({
 }: UseStudySignalingOptions): UseStudySignalingResult {
   const [status, setStatus] = useState<SignalingConnectionStatus>("idle");
   const [participants, setParticipants] = useState<SignalingParticipant[]>([]);
+  const [joinOfferTargets, setJoinOfferTargets] = useState<string[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [socketId, setSocketId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +146,7 @@ export function useStudySignaling({
     setSocket(null);
     setSocketId(null);
     setParticipants([]);
+    setJoinOfferTargets([]);
     setStatus("disconnected");
   }, [teardownSocket]);
 
@@ -166,6 +174,7 @@ export function useStudySignaling({
     setStatus("connecting");
     setError(null);
     setParticipants([]);
+    setJoinOfferTargets([]);
 
     const socket = createSignalingSocket();
     socketRef.current = socket;
@@ -203,6 +212,7 @@ export function useStudySignaling({
     const onRoomUsers = (payload: RoomUsersPayload) => {
       if (normalizeRoomId(payload.roomId) !== normalizedRoomId) return;
       setStatus("joined");
+      setJoinOfferTargets(payload.users.map((u) => u.socketId));
       const others: SignalingParticipant[] = payload.users.map((u) => ({
         socketId: u.socketId,
         odId: u.odId,
@@ -239,6 +249,7 @@ export function useStudySignaling({
       setSocket(null);
       setSocketId(null);
       setParticipants([]);
+      setJoinOfferTargets([]);
       setStatus("idle");
     };
   }, [
@@ -255,6 +266,7 @@ export function useStudySignaling({
   return {
     status,
     participants,
+    joinOfferTargets,
     socket,
     socketId,
     error,
