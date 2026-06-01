@@ -31,10 +31,18 @@ export function getSignalingUrl(): string {
 export function createSignalingSocket(): Socket {
   return io(getSignalingUrl(), {
     path: "/socket.io",
-    transports: ["websocket", "polling"],
+    /**
+     * Polling first, then auto-upgrade to WebSocket. Forcing "websocket" first
+     * fails on Render free-tier cold starts and some proxies ("WebSocket closed
+     * before connection established"). Polling handshake is far more reliable.
+     */
+    transports: ["polling", "websocket"],
+    upgrade: true,
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 8,
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 60000,
   });
 }
