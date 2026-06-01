@@ -142,20 +142,9 @@ export function useMeshWebRTC({
   const rtcConfigRef = useRef<AppRtcConfiguration>({ iceServers: [] });
   const iceInitRoomRef = useRef<string | null>(null);
   const [iceReady, setIceReady] = useState(false);
-  const [iceDiagnostics, setIceDiagnostics] = useState<IceDiagnostics>(() => ({
-    turnConfigured: false,
-    freeTurnEnabled: true,
-    providers: ["stun", "openrelay"],
-    openRelayEnabled: true,
-    meteredEnabled: false,
-    customTurnEnabled: false,
-    meteredApiConfigured: false,
-    turnOnlyMode: false,
-    iceTransportPolicy: "all",
-    stunCount: 0,
-    turnUrlCount: 0,
-    connectivity: null,
-  }));
+  const [iceDiagnostics, setIceDiagnostics] = useState<IceDiagnostics>(() =>
+    getIceDiagnostics()
+  );
   const roomIdRef = useRef(roomId);
   const localStreamRef = useRef(localStream);
   const handleRemoteOfferRef = useRef<(p: WebRTCSignalPayload) => Promise<void>>(

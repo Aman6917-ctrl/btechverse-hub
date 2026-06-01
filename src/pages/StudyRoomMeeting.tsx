@@ -108,13 +108,15 @@ export default function StudyRoomMeeting() {
     });
   }, [roomId]);
 
+  // Start camera/mic immediately — do NOT wait for signaling to join.
+  // Signaling (Render) can cold-start slowly; camera should not be blocked by it.
   useEffect(() => {
-    if (mediaStarted || signaling.status !== "joined" || !signaling.socket) return;
+    if (mediaStarted || authLoading || !user || !roomId) return;
     void (async () => {
       const stream = await media.startMedia();
       if (stream) setMediaStarted(true);
     })();
-  }, [signaling.status, signaling.socket, mediaStarted, media]);
+  }, [authLoading, user, roomId, mediaStarted, media]);
 
   const leaveMeeting = useCallback(() => {
     void media.stopScreenShare();
@@ -201,13 +203,29 @@ export default function StudyRoomMeeting() {
       />
 
       <div className="flex-1 flex min-h-0 relative">
-        {media.isStarting || !media.localPreviewStream ? (
+        {!media.localPreviewStream && media.error && !media.isStarting ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <p className="text-base font-medium text-red-400">Camera / mic not available</p>
+            <p className="text-sm text-[#9aa0a6] max-w-md">{media.error}</p>
+            <p className="text-xs text-[#9aa0a6] max-w-md">
+              Allow camera & microphone access in the browser address bar, then retry.
+              Make sure no other app (Zoom, Meet) is using the camera.
+            </p>
+            <Button
+              onClick={() => {
+                void (async () => {
+                  const stream = await media.startMedia();
+                  if (stream) setMediaStarted(true);
+                })();
+              }}
+            >
+              Retry camera
+            </Button>
+          </div>
+        ) : media.isStarting || !media.localPreviewStream ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-10 w-10 animate-spin text-[#8ab4f8]" />
             <p className="text-sm text-[#9aa0a6]">Starting camera and microphone…</p>
-            {media.error && (
-              <p className="text-sm text-red-400 max-w-md text-center">{media.error}</p>
-            )}
           </div>
         ) : (
           <VideoGrid
