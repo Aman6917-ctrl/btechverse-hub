@@ -17,6 +17,13 @@ export function getStudyRoomMeetingPath(roomCode: string): string {
   return `/study/room/${safe}/meeting`;
 }
 
+/** Full shareable URL that drops the user straight into the video meeting. */
+export function getStudyRoomMeetingUrl(roomCode: string): string {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://btechverse.cloud";
+  return `${origin}${getStudyRoomMeetingPath(roomCode)}`;
+}
+
 /** @deprecated Use getStudyRoomMeetingPath — redirects from old /voice URLs */
 export function getStudyRoomVoicePath(roomCode: string): string {
   return getStudyRoomMeetingPath(roomCode);

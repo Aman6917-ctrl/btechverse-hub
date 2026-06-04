@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore";
 import {
   getStudyRoomMeetingPath,
+  getStudyRoomMeetingUrl,
   STUDY_MESSAGES_SUBCOLLECTION,
   STUDY_ROOMS_COLLECTION,
 } from "@/lib/study-room";
@@ -29,6 +30,7 @@ import {
   Copy,
   Loader2,
   Send,
+  Share2,
   Timer,
   Trash2,
   Video,
@@ -166,6 +168,29 @@ export default function StudyRoomSession() {
     toast({ title: "Link copied", description: "Invite link — dost ko bhejo." });
   };
 
+  const shareMeetingLink = async () => {
+    const link = getStudyRoomMeetingUrl(roomId);
+    const shareData = {
+      title: room?.topic || "Btechverse study room",
+      text: "Join my video meeting on Btechverse",
+      url: link,
+    };
+    // Native share sheet on mobile; clipboard fallback on desktop.
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // user cancelled or unsupported — fall through to clipboard
+      }
+    }
+    void navigator.clipboard.writeText(link);
+    toast({
+      title: "Meeting link copied",
+      description: "Is link pe click karte hi seedha video call me aa jayega.",
+    });
+  };
+
   const joinVideoMeeting = () => {
     navigate(getStudyRoomMeetingPath(roomId));
   };
@@ -261,6 +286,10 @@ export default function StudyRoomSession() {
           </Button>
           <Button variant="outline" size="sm" onClick={copyInviteLink}>
             Copy invite link
+          </Button>
+          <Button size="sm" onClick={() => void shareMeetingLink()}>
+            <Share2 className="h-4 w-4 mr-1" />
+            Share meeting link
           </Button>
         </div>
 

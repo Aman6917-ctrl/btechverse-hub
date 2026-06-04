@@ -4,9 +4,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Loader2, MonitorUp, Wifi, WifiOff } from "lucide-react";
+import { Loader2, MonitorUp, Share2, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStudySignaling } from "@/hooks/useStudySignaling";
 import { useMediaControls } from "@/hooks/useMediaControls";
@@ -18,12 +19,13 @@ import { ParticipantSidebar } from "@/components/meeting/ParticipantSidebar";
 import { MeetingConnectionBanner } from "@/components/meeting/MeetingConnectionBanner";
 import { getFirestoreDb } from "@/integrations/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
-import { STUDY_ROOMS_COLLECTION } from "@/lib/study-room";
+import { getStudyRoomMeetingUrl, STUDY_ROOMS_COLLECTION } from "@/lib/study-room";
 
 export default function StudyRoomMeeting() {
   const { roomId: rawRoomId } = useParams<{ roomId: string }>();
   const roomId = (rawRoomId || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const [roomTitle, setRoomTitle] = useState("Study session");
   const [roomLoading, setRoomLoading] = useState(true);
@@ -113,6 +115,27 @@ export default function StudyRoomMeeting() {
     })();
   }, [authLoading, user, roomId, mediaStarted, media]);
 
+  const shareMeetingLink = useCallback(async () => {
+    const link = getStudyRoomMeetingUrl(roomId);
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: roomTitle,
+          text: "Join my video meeting on Btechverse",
+          url: link,
+        });
+        return;
+      } catch {
+        // cancelled — fall through to clipboard
+      }
+    }
+    void navigator.clipboard.writeText(link);
+    toast({
+      title: "Meeting link copied",
+      description: "Share it — clicking opens the call directly.",
+    });
+  }, [roomId, roomTitle, toast]);
+
   const leaveMeeting = useCallback(() => {
     void media.stopScreenShare();
     mesh.teardownAll();
@@ -176,6 +199,15 @@ export default function StudyRoomMeeting() {
             You are presenting
           </Badge>
         )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 text-[#e8eaed] hover:bg-[#3c4043]"
+          onClick={() => void shareMeetingLink()}
+        >
+          <Share2 className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">Share link</span>
+        </Button>
         <div className="flex items-center gap-2 text-xs sm:text-sm text-[#9aa0a6]">
           {signaling.status === "joined" ? (
             <Wifi className="h-4 w-4 text-green-500" />
