@@ -75,11 +75,9 @@ export default function StudyRoomMeeting() {
       ? signaling.socketId
       : mesh.presentingPeerId;
 
+  // Active-speaker detection disabled — no tile glow/blink or auto-spotlight on speech.
   const speakers = useActiveSpeakerDetection({
-    enabled:
-      mediaStarted &&
-      !!media.cameraStream &&
-      signaling.status === "joined",
+    enabled: false,
     localSocketId: signaling.socketId,
     localAudioStream: media.cameraStream,
     remotePeers: mesh.remotePeers,
@@ -87,11 +85,8 @@ export default function StudyRoomMeeting() {
     presenterSpotlightId,
   });
 
-  /** Screen share wins; else manual pin; else dominant speaker spotlight */
-  const spotlightId =
-    presenterSpotlightId ??
-    manualPinId ??
-    speakers.suggestedSpotlightId;
+  /** Screen share wins; else manual pin (no auto speaker spotlight) */
+  const spotlightId = presenterSpotlightId ?? manualPinId;
 
   useEffect(() => {
     if (!roomId) {
