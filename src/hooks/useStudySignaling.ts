@@ -16,6 +16,8 @@ import type { Socket } from "socket.io-client";
 import { createSignalingSocket } from "@/lib/signaling/socket-client";
 import {
   SignalingEvents,
+  type MediaStatePayload,
+  type RemoteMediaState,
   type RoomUsersPayload,
   type SignalingConnectionStatus,
   type SignalingParticipant,
@@ -61,6 +63,10 @@ export interface UseStudySignalingResult {
    * may have fired before the mesh hook subscribed.
    */
   joinOfferTargets: string[];
+  /** Live mic/camera state of remote peers, keyed by socketId. */
+  remoteMediaState: Record<string, RemoteMediaState>;
+  /** Broadcast this client's mic/camera state to everyone in the room. */
+  emitMediaState: (state: RemoteMediaState) => void;
   /** Live Socket.IO instance when connected — pass to useMeshWebRTC (do not create a second socket). */
   socket: Socket | null;
   socketId: string | null;
@@ -82,6 +88,9 @@ export function useStudySignaling({
   const [status, setStatus] = useState<SignalingConnectionStatus>("idle");
   const [participants, setParticipants] = useState<SignalingParticipant[]>([]);
   const [joinOfferTargets, setJoinOfferTargets] = useState<string[]>([]);
+  const [remoteMediaState, setRemoteMediaState] = useState<
+    Record<string, RemoteMediaState>
+  >({});
   const [socket, setSocket] = useState<Socket | null>(null);
   const [socketId, setSocketId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +101,11 @@ export function useStudySignaling({
   /** Mutable socket — survives renders without causing them */
   const socketRef = useRef<Socket | null>(null);
   const selfSocketIdRef = useRef<string | null>(null);
+  /** Last broadcast mic/camera state — re-sent on reconnect / when peers join. */
+  const lastMediaStateRef = useRef<RemoteMediaState>({
+    micEnabled: true,
+    cameraEnabled: true,
+  });
 
   const roomIdRef = useRef(roomId);
   const odIdRef = useRef(odId);
@@ -147,12 +161,25 @@ export function useStudySignaling({
     setSocketId(null);
     setParticipants([]);
     setJoinOfferTargets([]);
+    setRemoteMediaState({});
     setStatus("disconnected");
   }, [teardownSocket]);
 
   const reconnect = useCallback(() => {
     setSocketActive(true);
     setSessionKey((k) => k + 1);
+  }, []);
+
+  const emitMediaState = useCallback((state: RemoteMediaState) => {
+    lastMediaStateRef.current = state;
+    const socket = socketRef.current;
+    const rid = normalizeRoomId(roomIdRef.current);
+    if (!socket?.connected || rid.length < 4) return;
+    socket.emit(SignalingEvents.MEDIA_STATE, {
+      roomId: rid,
+      micEnabled: state.micEnabled,
+      cameraEnabled: state.cameraEnabled,
+    });
   }, []);
 
   useEffect(() => {
@@ -175,6 +202,7 @@ export function useStudySignaling({
     setError(null);
     setParticipants([]);
     setJoinOfferTargets([]);
+    setRemoteMediaState({});
 
     const socket = createSignalingSocket();
     socketRef.current = socket;
@@ -228,11 +256,38 @@ export function useStudySignaling({
         upsertParticipant(prev, payload.user, selfSocketIdRef.current)
       );
       setStatus("joined");
+      // Re-broadcast our current mic/camera state so the newcomer sees it.
+      const rid = normalizeRoomId(roomIdRef.current);
+      if (socket.connected && rid.length >= 4) {
+        socket.emit(SignalingEvents.MEDIA_STATE, {
+          roomId: rid,
+          micEnabled: lastMediaStateRef.current.micEnabled,
+          cameraEnabled: lastMediaStateRef.current.cameraEnabled,
+        });
+      }
     };
 
     const onUserLeft = (payload: UserLeftPayload) => {
       if (normalizeRoomId(payload.roomId) !== normalizedRoomId) return;
       setParticipants((prev) => removeBySocketId(prev, payload.socketId));
+      setRemoteMediaState((prev) => {
+        if (!(payload.socketId in prev)) return prev;
+        const next = { ...prev };
+        delete next[payload.socketId];
+        return next;
+      });
+    };
+
+    const onMediaState = (payload: MediaStatePayload) => {
+      if (normalizeRoomId(payload.roomId) !== normalizedRoomId) return;
+      if (payload.fromSocketId === selfSocketIdRef.current) return;
+      setRemoteMediaState((prev) => ({
+        ...prev,
+        [payload.fromSocketId]: {
+          micEnabled: payload.micEnabled !== false,
+          cameraEnabled: payload.cameraEnabled !== false,
+        },
+      }));
     };
 
     socket.on("connect", onConnect);
@@ -241,6 +296,7 @@ export function useStudySignaling({
     socket.on(SignalingEvents.ROOM_USERS, onRoomUsers);
     socket.on(SignalingEvents.USER_JOINED, onUserJoined);
     socket.on(SignalingEvents.USER_LEFT, onUserLeft);
+    socket.on(SignalingEvents.MEDIA_STATE, onMediaState);
 
     return () => {
       teardownSocket(socket);
@@ -250,6 +306,7 @@ export function useStudySignaling({
       setSocketId(null);
       setParticipants([]);
       setJoinOfferTargets([]);
+      setRemoteMediaState({});
       setStatus("idle");
     };
   }, [
@@ -267,6 +324,8 @@ export function useStudySignaling({
     status,
     participants,
     joinOfferTargets,
+    remoteMediaState,
+    emitMediaState,
     socket,
     socketId,
     error,

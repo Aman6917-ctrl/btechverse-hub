@@ -72,6 +72,20 @@ export default function StudyRoomMeeting() {
     replaceVideoRef.current = mesh.replaceOutgoingVideoTrack;
   }, [mesh.replaceOutgoingVideoTrack]);
 
+  // Broadcast mic/camera on-off so remote tiles show muted icon / avatar.
+  useEffect(() => {
+    if (signaling.status !== "joined") return;
+    signaling.emitMediaState({
+      micEnabled: media.micEnabled,
+      cameraEnabled: media.cameraEnabled,
+    });
+  }, [
+    media.micEnabled,
+    media.cameraEnabled,
+    signaling.status,
+    signaling.emitMediaState,
+  ]);
+
   const presenterSpotlightId =
     media.isScreenSharing && signaling.socketId
       ? signaling.socketId
@@ -268,6 +282,7 @@ export default function StudyRoomMeeting() {
             dominantSpeakerId={speakers.dominantSpeakerId}
             speakingBySocketId={speakers.speakingBySocketId}
             spotlightId={spotlightId}
+            remoteMediaState={signaling.remoteMediaState}
             onPin={setManualPinId}
           />
         )}

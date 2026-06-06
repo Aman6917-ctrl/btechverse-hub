@@ -51,6 +51,13 @@ export interface WebRTCSignalPayload {
   candidate?: RTCIceCandidateInit;
 }
 
+export interface MediaStatePayload {
+  roomId: string;
+  fromSocketId: string;
+  micEnabled: boolean;
+  cameraEnabled: boolean;
+}
+
 export const SignalingEvents = {
   JOIN_ROOM: "join-room",
   LEAVE_ROOM: "leave-room",
@@ -60,7 +67,14 @@ export const SignalingEvents = {
   ROOM_USERS: "room-users",
   USER_JOINED: "user-joined",
   USER_LEFT: "user-left",
+  MEDIA_STATE: "media-state",
 } as const;
+
+/** Remote peer's mic/camera on-off state, keyed by socketId. */
+export interface RemoteMediaState {
+  micEnabled: boolean;
+  cameraEnabled: boolean;
+}
 
 /** One row in the live participant list (UI + future WebRTC peer list). */
 export interface SignalingParticipant {

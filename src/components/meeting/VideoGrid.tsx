@@ -5,6 +5,7 @@
 import { cn } from "@/lib/utils";
 import { VideoTile } from "./VideoTile";
 import type { RemotePeerStream } from "@/hooks/useMeshWebRTC";
+import type { RemoteMediaState } from "@/lib/signaling/types";
 
 export interface LocalTileData {
   stream: MediaStream | null;
@@ -21,6 +22,8 @@ interface VideoGridProps {
   dominantSpeakerId: string | null;
   speakingBySocketId: Record<string, boolean>;
   spotlightId: string | null;
+  /** Mic/camera on-off state of remote peers, keyed by socketId. */
+  remoteMediaState: Record<string, RemoteMediaState>;
   onPin: (socketId: string | null) => void;
 }
 
@@ -38,8 +41,15 @@ export function VideoGrid({
   dominantSpeakerId,
   speakingBySocketId,
   spotlightId,
+  remoteMediaState,
   onPin,
 }: VideoGridProps) {
+  // Remote peer is presenting → always show stream; otherwise honour their
+  // signalled camera state (default true until media-state arrives).
+  const remoteCameraEnabled = (peer: RemotePeerStream) =>
+    peer.isPresenting || (remoteMediaState[peer.socketId]?.cameraEnabled ?? true);
+  const remoteMicEnabled = (socketId: string) =>
+    remoteMediaState[socketId]?.micEnabled ?? true;
   const total = 1 + remotes.length;
   const anyoneSpeaking = Object.values(speakingBySocketId).some(Boolean);
 
@@ -79,8 +89,20 @@ export function VideoGrid({
           }
             {...tileProps(spotlightIsSelf ? local.socketId : spotlightRemote?.socketId ?? null, spotlightIsSelf)}
             connectionQuality={spotlightRemote?.quality}
-          micEnabled={spotlightIsSelf ? local.micEnabled : true}
-          cameraEnabled={spotlightIsSelf ? local.cameraEnabled : true}
+          micEnabled={
+            spotlightIsSelf
+              ? local.micEnabled
+              : spotlightRemote
+                ? remoteMicEnabled(spotlightRemote.socketId)
+                : true
+          }
+          cameraEnabled={
+            spotlightIsSelf
+              ? local.cameraEnabled
+              : spotlightRemote
+                ? remoteCameraEnabled(spotlightRemote)
+                : true
+          }
           isSpotlight
           onPin={() => onPin(null)}
           className="w-full max-h-[55vh] min-h-[200px]"
@@ -108,6 +130,8 @@ export function VideoGrid({
             displayName={peer.displayName}
             isPresenting={peer.isPresenting}
             {...tileProps(peer.socketId, false)}
+            micEnabled={remoteMicEnabled(peer.socketId)}
+            cameraEnabled={remoteCameraEnabled(peer)}
             connectionQuality={peer.quality}
             onPin={() => onPin(peer.socketId)}
           />

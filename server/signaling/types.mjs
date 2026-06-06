@@ -8,4 +8,5 @@ export const SignalingEvents = {
   ROOM_USERS: "room-users",
   USER_JOINED: "user-joined",
   USER_LEFT: "user-left",
+  MEDIA_STATE: "media-state",
 };

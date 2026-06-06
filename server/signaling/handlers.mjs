@@ -171,6 +171,18 @@ export function registerSignalingHandlers(io) {
       relayWebRTC(socket, SignalingEvents.WEBRTC_ICE, raw);
     });
 
+    socket.on(SignalingEvents.MEDIA_STATE, (raw) => {
+      if (!raw || typeof raw !== "object" || typeof raw.roomId !== "string") return;
+      const roomId = normalizeRoomId(raw.roomId);
+      if (!isSocketInRoom(socket.id, roomId)) return;
+      socket.to(roomId).emit(SignalingEvents.MEDIA_STATE, {
+        roomId,
+        fromSocketId: socket.id,
+        micEnabled: raw.micEnabled !== false,
+        cameraEnabled: raw.cameraEnabled !== false,
+      });
+    });
+
     socket.on("disconnect", (reason) => {
       const left = removeSocketFromAllRooms(socket.id);
 

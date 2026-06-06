@@ -44,17 +44,22 @@ export function VideoTile({
 }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Keep the <video> element mounted at all times and (re)attach the stream
+  // whenever it changes. Conditionally unmounting the element broke camera
+  // off→on: the new element never got srcObject because `stream` was unchanged.
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
-    el.srcObject = stream;
+    if (el.srcObject !== stream) {
+      el.srcObject = stream;
+    }
   }, [stream]);
 
   const videoTrack = stream?.getVideoTracks()[0];
+  // cameraEnabled is authoritative for both self (local track) and remotes
+  // (received via media-state signaling). Presenting always shows the stream.
   const showVideo =
-    !!videoTrack &&
-    videoTrack.enabled &&
-    (isPresenting || cameraEnabled || !isSelf);
+    !!videoTrack && videoTrack.enabled && (isPresenting || cameraEnabled);
 
   return (
     <div
@@ -91,18 +96,18 @@ export function VideoTile({
           Speaking
         </div>
       )}
-      {showVideo ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted={isSelf}
-          className={cn(
-            "w-full h-full bg-black transition-opacity duration-300",
-            isPresenting ? "object-contain" : "object-cover"
-          )}
-        />
-      ) : (
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={isSelf}
+        className={cn(
+          "w-full h-full bg-black transition-opacity duration-300",
+          isPresenting ? "object-contain" : "object-cover",
+          showVideo ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      />
+      {!showVideo && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#3c4043]">
           <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-[#5f6368] flex items-center justify-center text-2xl font-semibold text-white">
             {displayName.charAt(0).toUpperCase()}
