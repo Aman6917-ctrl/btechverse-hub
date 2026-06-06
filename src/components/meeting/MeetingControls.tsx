@@ -26,6 +26,8 @@ interface MeetingControlsProps {
   onLeave: () => void;
   onToggleParticipants?: () => void;
   participantsOpen?: boolean;
+  onToggleChat?: () => void;
+  chatOpen?: boolean;
   disabled?: boolean;
 }
 
@@ -78,6 +80,8 @@ export function MeetingControls({
   onLeave,
   onToggleParticipants,
   participantsOpen,
+  onToggleChat,
+  chatOpen,
   disabled,
 }: MeetingControlsProps) {
   return (
@@ -135,8 +139,12 @@ export function MeetingControls({
         <Users className="h-5 w-5" />
       </ControlButton>
 
-      <ControlButton label="Chat" onClick={() => {}} disabled>
-        <MessageSquare className="h-5 w-5 opacity-50" />
+      <ControlButton
+        label="Chat"
+        onClick={onToggleChat ?? (() => {})}
+        active={chatOpen}
+      >
+        <MessageSquare className="h-5 w-5" />
       </ControlButton>
     </footer>
   );

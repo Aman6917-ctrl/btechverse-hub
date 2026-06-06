@@ -16,6 +16,7 @@ import { useActiveSpeakerDetection } from "@/hooks/useActiveSpeakerDetection";
 import { VideoGrid } from "@/components/meeting/VideoGrid";
 import { MeetingControls } from "@/components/meeting/MeetingControls";
 import { ParticipantSidebar } from "@/components/meeting/ParticipantSidebar";
+import { MeetingChatPanel } from "@/components/meeting/MeetingChatPanel";
 import { MeetingConnectionBanner } from "@/components/meeting/MeetingConnectionBanner";
 import { getFirestoreDb } from "@/integrations/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
@@ -31,6 +32,7 @@ export default function StudyRoomMeeting() {
   const [roomLoading, setRoomLoading] = useState(true);
   const [manualPinId, setManualPinId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [mediaStarted, setMediaStarted] = useState(false);
 
   const replaceVideoRef = useRef<
@@ -296,6 +298,14 @@ export default function StudyRoomMeeting() {
           speakingBySocketId={speakers.speakingBySocketId}
           remotePeers={mesh.remotePeers}
         />
+
+        <MeetingChatPanel
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          roomId={roomId}
+          uid={user?.uid ?? null}
+          displayName={displayName}
+        />
       </div>
 
       {(mesh.error || signaling.error || media.error) && (
@@ -313,8 +323,16 @@ export default function StudyRoomMeeting() {
         onToggleCamera={media.toggleCamera}
         onToggleScreenShare={() => void media.toggleScreenShare()}
         onLeave={leaveMeeting}
-        onToggleParticipants={() => setSidebarOpen((o) => !o)}
+        onToggleParticipants={() => {
+          setSidebarOpen((o) => !o);
+          setChatOpen(false);
+        }}
         participantsOpen={sidebarOpen}
+        onToggleChat={() => {
+          setChatOpen((o) => !o);
+          setSidebarOpen(false);
+        }}
+        chatOpen={chatOpen}
         disabled={!media.cameraStream}
       />
     </div>
