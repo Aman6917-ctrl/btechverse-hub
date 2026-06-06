@@ -12,39 +12,49 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId
+);
+
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let storage: FirebaseStorage | undefined;
+let warned = false;
+
+function warnMissing(service: string): never {
+  if (!warned) {
+    warned = true;
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[firebase] Missing VITE_FIREBASE_* env vars — ${service} unavailable. ` +
+        "Add them as Build Secrets in Lovable (Workspace Settings → Build Secrets)."
+    );
+  }
+  throw new Error(`Firebase is not configured (missing VITE_FIREBASE_API_KEY). ${service} unavailable.`);
+}
 
 function getFirebaseApp(): FirebaseApp {
-  if (!app) {
-    app = initializeApp(firebaseConfig);
-  }
+  if (!isFirebaseConfigured) warnMissing("Firebase app");
+  if (!app) app = initializeApp(firebaseConfig);
   return app;
 }
 
 function getFirebaseAuth(): Auth {
-  if (!auth) {
-    getFirebaseApp();
-    auth = getAuth(app);
-  }
+  if (!isFirebaseConfigured) warnMissing("Auth");
+  if (!auth) auth = getAuth(getFirebaseApp());
   return auth;
 }
 
 function getFirestoreDb(): Firestore {
-  if (!db) {
-    getFirebaseApp();
-    db = getFirestore(app);
-  }
+  if (!isFirebaseConfigured) warnMissing("Firestore");
+  if (!db) db = getFirestore(getFirebaseApp());
   return db;
 }
 
 function getFirebaseStorage(): FirebaseStorage {
-  if (!storage) {
-    getFirebaseApp();
-    storage = getStorage(app);
-  }
+  if (!isFirebaseConfigured) warnMissing("Storage");
+  if (!storage) storage = getStorage(getFirebaseApp());
   return storage;
 }
 
