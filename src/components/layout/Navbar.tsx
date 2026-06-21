@@ -45,25 +45,25 @@ export function Navbar() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 px-4"
     >
+      <div className="relative w-fit max-w-[min(100%,64rem)]">
       <nav
-        className={`relative flex w-full max-w-5xl items-center justify-between gap-1 px-2 py-2 md:gap-2 md:px-3 md:py-2 rounded-full transition-all duration-300 ${
+        className={`flex items-center gap-2 sm:gap-3 px-3 py-2 md:px-4 md:py-2 rounded-full transition-all duration-300 ${
           scrolled
             ? "bg-background/95 backdrop-blur-md shadow-lg shadow-foreground/5"
             : "bg-background/90 backdrop-blur-sm shadow-md shadow-foreground/5"
         } border border-border/50`}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3 pl-2">
-          <Link to="/" className="flex shrink-0 items-center gap-2">
-            <img src={logoImage} alt="Btechverse" className="h-8 w-auto" />
-            <span className="text-[1rem] font-bold hidden sm:inline leading-8">
-              Btech<span className="text-primary">verse</span>
-            </span>
-            <span className="hidden xl:inline text-xs handwritten text-muted-foreground/80 ml-0.5 whitespace-nowrap">
-              for students
-            </span>
-          </Link>
+        <Link to="/" className="flex shrink-0 items-center gap-2">
+          <img src={logoImage} alt="Btechverse" className="h-8 w-auto" />
+          <span className="text-[1rem] font-bold hidden sm:inline leading-8 whitespace-nowrap">
+            Btech<span className="text-primary">verse</span>
+          </span>
+          <span className="hidden xl:inline text-xs handwritten text-muted-foreground/80 ml-0.5 whitespace-nowrap">
+            for students
+          </span>
+        </Link>
 
-          <div className="hidden md:flex min-w-0 items-center gap-0.5">
+        <div className="hidden md:flex items-center gap-0.5 lg:gap-1">
           {allLinks.map((link) => {
             const isPageLink =
               link.href === "/mentors" ||
@@ -106,49 +106,50 @@ export function Navbar() {
               </a>
             );
           })}
-          </div>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-2 md:flex pr-1">
-          {!loading && user ? (
-            <>
-              <span
-                className="text-sm text-muted-foreground flex items-center gap-1 min-w-0 max-w-[100px] truncate"
-                title={user.email ?? undefined}
-              >
-                <User className="h-4 w-4 shrink-0" />
-                <span className="truncate">{user.email?.split("@")[0]}</span>
-              </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
+            {!loading && user ? (
+              <>
+                <span
+                  className="text-sm text-muted-foreground flex items-center gap-1 min-w-0 max-w-[100px] truncate"
+                  title={user.email ?? undefined}
+                >
+                  <User className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{user.email?.split("@")[0]}</span>
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full px-3 h-9 shrink-0"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
               <Button
                 size="sm"
-                variant="outline"
-                className="rounded-full px-3 h-9 shrink-0"
-                onClick={handleSignOut}
+                className="rounded-full px-5 h-9 bg-foreground text-background hover:bg-foreground/90 btn-punch hover:scale-105 active:scale-95 transition-transform shrink-0"
+                onClick={handleAuthClick}
               >
-                <LogOut className="h-4 w-4" />
-                Logout
+                Get Started
+                <ArrowRight className="h-4 w-4" />
               </Button>
-            </>
-          ) : (
-            <Button
-              size="sm"
-              className="rounded-full px-5 h-9 bg-foreground text-background hover:bg-foreground/90 btn-punch hover:scale-105 active:scale-95 transition-transform shrink-0"
-              onClick={handleAuthClick}
-            >
-              Get Started
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
 
-        <button
-          type="button"
-          className="md:hidden shrink-0 p-2 rounded-full hover:bg-muted/50 transition-colors"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
-        >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+          <button
+            type="button"
+            className="md:hidden shrink-0 p-2 rounded-full hover:bg-muted/50 transition-colors"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </nav>
 
       <AnimatePresence>
@@ -158,7 +159,7 @@ export function Navbar() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-full mt-2 left-4 right-4 md:hidden max-w-5xl mx-auto"
+            className="absolute top-full mt-2 left-0 right-0 md:hidden min-w-[280px]"
           >
             <div className="bg-background/95 backdrop-blur-md rounded-2xl shadow-lg shadow-foreground/5 border border-border/50 p-4">
               <div className="flex flex-col gap-1">
@@ -235,6 +236,7 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </motion.header>
   );
 }

@@ -151,7 +151,7 @@ export default function StudyRoomHub() {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Signed-in users only. Video uses <strong>custom WebRTC</strong> on Btechverse (no third-party SDK).
+            Share the code with your group. Once you&apos;re in the room, hit Join video meeting to start the call.
           </p>
         </div>
 
