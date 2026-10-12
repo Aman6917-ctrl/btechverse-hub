@@ -20,7 +20,7 @@ export function getStudyRoomMeetingPath(roomCode: string): string {
 /** Full shareable URL that drops the user straight into the video meeting. */
 export function getStudyRoomMeetingUrl(roomCode: string): string {
   const origin =
-    typeof window !== "undefined" ? window.location.origin : "https://btechverse.cloud";
+    typeof window !== "undefined" ? window.location.origin : "https://btechverse.online";
   return `${origin}${getStudyRoomMeetingPath(roomCode)}`;
 }
 

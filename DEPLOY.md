@@ -36,7 +36,7 @@ npm run dev
 | Variable | Kahan se |
 |----------|----------|
 | `RESEND_API_KEY` | resend.com → API Keys |
-| `RESEND_FROM_EMAIL` | Verified domain (e.g. `Btechverse <notify@mail.btechverse.cloud>`) |
+| `RESEND_FROM_EMAIL` | Verified domain (e.g. `Btechverse <notify@mail.btechverse.online>`) |
 | `BOOK_SESSION_ADMIN_EMAIL` | Tumhara email |
 | `TWILIO_*` | console.twilio.com | Optional, WhatsApp ke liye |
 
@@ -53,10 +53,22 @@ Server (API) agar alag deploy kar rahe ho (e.g. Railway, Render), wahan bhi same
 |---------|--------|
 | **Start command** | `node server/api.mjs` ya `npm start` |
 | **Build command** | `npm install` (optional; start installs deps on boot) |
-| `ALLOWED_ORIGINS` | `https://btechverse.cloud,https://www.btechverse.cloud` (+ Netlify preview URL agar use ho) |
+| `ALLOWED_ORIGINS` | `https://btechverse.online,https://www.btechverse.online` (+ Netlify preview URL agar use ho) |
 
 Deploy ke baad check: `curl 'https://YOUR-API.onrender.com/socket.io/?EIO=4&transport=polling'` — body me `0{"sid"` jaisa Engine.IO packet hona chahiye, `{"error":"Not found"}` nahi.
 
 ### Netlify (frontend)
 
 `VITE_*` change ke baad **Clear cache and deploy**. Meeting ke liye kam se kam `VITE_API_BASE_URL` + STUN/TURN vars set karo.
+
+### Custom domain (`btechverse.online`)
+
+1. **Netlify → Site → Domain management → Add custom domain** → `btechverse.online` (and `www.btechverse.online`).
+2. DNS (domain registrar) me Netlify ke records set karo:
+   - Apex (`btechverse.online`): Netlify ke **A / ALIAS / ANAME** (dashboard jo dikhaye)
+   - `www`: **CNAME** → `btechverse.online` ya Netlify ka `*.netlify.app` hostname
+3. HTTPS on hone do (Netlify Let's Encrypt — 5–30 min).
+4. **Render → Environment → `ALLOWED_ORIGINS`** update:
+   `https://btechverse.online,https://www.btechverse.online`
+5. **Firebase Console → Authentication → Settings → Authorized domains** me `btechverse.online` add karo (warna Google login block hoga).
+6. OAuth (Google) me Authorized JavaScript origins / redirect URIs bhi naya domain daalo.

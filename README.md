@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://btechverse.cloud">Live Site</a> •
+  <a href="https://btechverse.online">Live Site</a> •
   <a href="#features">Features</a> •
   <a href="#tech-stack">Tech Stack</a> •
   <a href="#getting-started">Getting Started</a>
@@ -174,5 +174,5 @@ Built for B.Tech students. Use and share as you like.
 
 ## Links
 
-- **Live site:** [btechverse.cloud](https://btechverse.cloud)
+- **Live site:** [btechverse.online](https://btechverse.online)
 - **Repository:** [github.com/Aman6917-ctrl/btechverse-hub](https://github.com/Aman6917-ctrl/btechverse-hub)

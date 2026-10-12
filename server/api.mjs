@@ -34,8 +34,8 @@ const { handleBookSession } = await import("./book-session.mjs");
 const { handleRunCode } = await import("./run-code.mjs");
 
 const DEFAULT_ALLOWED_ORIGINS = [
-  "https://btechverse.cloud",
-  "https://www.btechverse.cloud",
+  "https://btechverse.online",
+  "https://www.btechverse.online",
   "http://localhost:8080",
   "http://127.0.0.1:8080",
 ];
