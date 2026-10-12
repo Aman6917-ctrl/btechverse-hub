@@ -101,7 +101,7 @@ export function AboutSection() {
                           <img
                             src={member.image}
                             alt={member.name}
-                            className="absolute inset-x-0 -top-[10%] h-[140%] w-full object-cover object-[center_18%]"
+                            className="absolute inset-0 h-full w-full object-cover object-[18%_12%]"
                             loading="lazy"
                           />
                         ) : (
