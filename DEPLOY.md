@@ -29,7 +29,9 @@ npm run dev
 | `VITE_SUPABASE_*` | Supabase dashboard | Agar use ho raha ho |
 | `VITE_API_BASE_URL` | — | `https://btechverse-hub.onrender.com` (ya apna API URL) |
 | `VITE_STUN_URLS` / `VITE_TURN_*` | coturn / provider | Video meeting — bina TURN ke strict NAT fail ho sakta hai (`docs/WEBRTC_TURN.md`) |
-| `OPENROUTER_API_KEY` | openrouter.ai | AI Buddy (server) |
+| `ANTHROPIC_API_KEY` | console.anthropic.com | AI Buddy — Claude (preferred) |
+| `ANTHROPIC_MODEL` | — | optional, default `claude-sonnet-4-5` |
+| `OPENROUTER_API_KEY` | openrouter.ai | AI Buddy fallback if Anthropic key missing |
 
 ### Book Session (email + WhatsApp)
 

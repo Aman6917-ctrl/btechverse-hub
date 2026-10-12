@@ -99,7 +99,9 @@ Get Firebase values from [Firebase Console](https://console.firebase.google.com)
 
 | Variable | Description |
 |----------|-------------|
-| `OPENROUTER_API_KEY` | [OpenRouter](https://openrouter.ai/keys) API key (for AI Buddy) |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key (AI Buddy, preferred) |
+| `ANTHROPIC_MODEL` | optional, default `claude-sonnet-4-5` |
+| `OPENROUTER_API_KEY` | [OpenRouter](https://openrouter.ai/keys) fallback if Anthropic key missing |
 | `OPENROUTER_MODEL` | Model ID (e.g. `openai/gpt-3.5-turbo`) |
 
 For **book-session**, S3 presign, and optional features, see `.env.example` and **DEPLOY.md**.

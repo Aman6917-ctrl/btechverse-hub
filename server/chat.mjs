@@ -1,6 +1,6 @@
 /**
- * Chat API – OpenRouter only (from scratch).
- * Reads OPENROUTER_API_KEY from .env. Used by api.mjs and Vite dev middleware.
+ * Chat API — Anthropic Claude (preferred) with OpenRouter fallback.
+ * Keys come from env / Render. Never commit secrets.
  */
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
@@ -19,95 +19,160 @@ function loadEnv() {
   } catch (_) {}
 }
 
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-// Paid key – use a paid model (no :free). Cheap & good: openai/gpt-3.5-turbo
-const DEFAULT_MODEL = "openai/gpt-3.5-turbo";
+const DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-5";
+const DEFAULT_OPENROUTER_MODEL = "openai/gpt-3.5-turbo";
 
-/**
- * Handle one chat request. Body = JSON string with { messages, system?, max_tokens?, temperature? }.
- * @param {string} body
- * @returns {Promise<{ statusCode: number, body: string }>}
- */
+function parseBody(body) {
+  const data = JSON.parse(String(body || "{}"));
+  const rawMessages = Array.isArray(data.messages) ? data.messages : [];
+  const systemMsg = rawMessages.find((m) => m && m.role === "system");
+  const chatMessages = rawMessages
+    .filter((m) => m && (m.role === "user" || m.role === "assistant"))
+    .map((m) => ({
+      role: m.role,
+      content: String(m.content || ""),
+    }))
+    .filter((m) => m.content.trim().length > 0);
+  const systemText =
+    (systemMsg && systemMsg.content) ||
+    (typeof data.system === "string" ? data.system : null) ||
+    "You are BTechVerse AI, a friendly study buddy for BTech students. Always answer in English only. Be clear and concise. If the user says they still didn't get it, explain the same concept again in simpler English with more real-world examples—still in English only, no Hindi.";
+  return {
+    data,
+    chatMessages,
+    systemText,
+    maxTokens: data.max_tokens ?? 800,
+    temperature: data.temperature ?? 0.7,
+  };
+}
+
+async function chatAnthropic({ apiKey, model, systemText, chatMessages, maxTokens, temperature }) {
+  const messages = [];
+  for (const m of chatMessages) {
+    const last = messages[messages.length - 1];
+    if (last && last.role === m.role) {
+      last.content += `\n${m.content}`;
+    } else {
+      messages.push({ role: m.role, content: m.content });
+    }
+  }
+  if (messages.length === 0) {
+    return { statusCode: 200, body: JSON.stringify({ content: null, error: "Empty message" }) };
+  }
+  if (messages[0].role !== "user") {
+    messages.unshift({ role: "user", content: "Hello" });
+  }
+
+  const res = await fetch(ANTHROPIC_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      temperature,
+      system: systemText,
+      messages,
+    }),
+  });
+
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = result?.error?.message ?? result?.error ?? `HTTP ${res.status}`;
+    console.error("[Anthropic]", res.status, result?.error || result);
+    const msg =
+      res.status === 401 || res.status === 403
+        ? "Claude API key invalid. Check ANTHROPIC_API_KEY on Render."
+        : String(err);
+    return { statusCode: 200, body: JSON.stringify({ content: null, error: msg }) };
+  }
+
+  const textParts = (result.content || [])
+    .filter((b) => b && b.type === "text")
+    .map((b) => b.text)
+    .join("\n");
+  const content = textParts || "No response.";
+  return { statusCode: 200, body: JSON.stringify({ content, usage: result.usage }) };
+}
+
+async function chatOpenRouter({ apiKey, model, systemText, chatMessages, maxTokens, temperature }) {
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://btechverse.online",
+      "X-Title": "BTechVerse",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "system", content: systemText }, ...chatMessages],
+      max_tokens: maxTokens,
+      temperature,
+    }),
+  });
+
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = result?.error?.message ?? result?.error ?? result?.message ?? `HTTP ${res.status}`;
+    console.error("[OpenRouter]", res.status, result?.error || result);
+    const msg =
+      res.status === 401
+        ? "OpenRouter: key invalid or out of credits."
+        : String(err);
+    return { statusCode: 200, body: JSON.stringify({ content: null, error: msg }) };
+  }
+
+  const content = result.choices?.[0]?.message?.content ?? "No response.";
+  return { statusCode: 200, body: JSON.stringify({ content, usage: result.usage }) };
+}
+
 export async function handleChat(body) {
   try {
     loadEnv();
-    const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY || "";
-
-    if (!apiKey) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ content: null, error: "OPENROUTER_API_KEY not set in .env" }),
-      };
-    }
-
     let data;
     try {
-      data = JSON.parse(String(body || "{}"));
+      data = parseBody(body);
     } catch {
       return { statusCode: 200, body: JSON.stringify({ content: null, error: "Invalid JSON" }) };
     }
 
-    const rawMessages = Array.isArray(data.messages) ? data.messages : [];
-    const systemMsg = rawMessages.find((m) => m && m.role === "system");
-    const chatMessages = rawMessages.filter((m) => m && m.role !== "system");
-    const systemText =
-      (systemMsg && systemMsg.content) ||
-      (typeof data.system === "string" ? data.system : null) ||
-      "You are BTechVerse AI, a friendly study buddy for BTech students. Always answer in English only. Be clear and concise. If the user says they still didn't get it, explain the same concept again in simpler English with more real-world examples—still in English only, no Hindi.";
+    const anthropicKey = process.env.ANTHROPIC_API_KEY || "";
+    if (anthropicKey) {
+      return await chatAnthropic({
+        apiKey: anthropicKey,
+        model: data.data.model || process.env.ANTHROPIC_MODEL || DEFAULT_CLAUDE_MODEL,
+        systemText: data.systemText,
+        chatMessages: data.chatMessages,
+        maxTokens: data.maxTokens,
+        temperature: data.temperature,
+      });
+    }
 
-    const model = data.model || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
-    const payload = {
-      model,
-      messages: [{ role: "system", content: systemText }, ...chatMessages],
-      max_tokens: data.max_tokens ?? 800,
-      temperature: data.temperature ?? 0.7,
-    };
-
-  try {
-    const res = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "http://localhost:8080",
-        "X-Title": "BTechVerse",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      const err =
-        result?.error?.message ?? result?.error ?? result?.message ?? `HTTP ${res.status}`;
-      const errStr = String(err).toLowerCase();
-      const msg =
-        res.status === 401 || /invalid|unauthorized|credits|endpoints/i.test(errStr)
-          ? "OpenRouter: key invalid or out of credits. Get a new key at https://openrouter.ai/keys and set OPENROUTER_API_KEY in .env"
-          : err;
-      try {
-        console.error("[OpenRouter]", res.status, result?.error || result);
-      } catch (_) {}
+    const openRouterKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY || "";
+    if (!openRouterKey) {
       return {
         statusCode: 200,
         body: JSON.stringify({
           content: null,
-          error: typeof msg === "string" ? msg : String(msg),
+          error: "ANTHROPIC_API_KEY not set on the server.",
         }),
       };
     }
 
-    const content = result.choices?.[0]?.message?.content ?? "No response.";
-    return { statusCode: 200, body: JSON.stringify({ content, usage: result.usage }) };
-  } catch (err) {
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        content: null,
-        error: err?.message || "OpenRouter request failed. Check network or try again.",
-      }),
-    };
-  }
+    return await chatOpenRouter({
+      apiKey: openRouterKey,
+      model: data.data.model || process.env.OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL,
+      systemText: data.systemText,
+      chatMessages: data.chatMessages,
+      maxTokens: data.maxTokens,
+      temperature: data.temperature,
+    });
   } catch (e) {
     return {
       statusCode: 200,
